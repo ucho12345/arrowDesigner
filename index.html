@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arrow Designer | Custom Arrow Builder</title>
+    <meta name="description" content="Advanced custom arrow designer and visualization tool for archers, featuring custom fletchings, wood & carbon shaft materials, nocks, points, and dynamic cresting patterns.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Top Bar -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">🏹</div>
+                <div class="brand-text">
+                    <h1>Arrow Designer</h1>
+                    <p>Custom Arrow Builder</p>
+                </div>
+            </div>
+
+            <!-- Arrow Quick Specs summary header pill -->
+            <div class="header-specs" id="headerSpecsPill" style="display: none;">
+                <div class="spec-pill beta-badge-pill">⚡ BETA VERSION</div>
+                <div class="spec-pill">
+                    <span class="pill-label">Weight:</span>
+                    <span class="pill-value" id="headerWeight">485 gr</span>
+                </div>
+                <div class="spec-pill">
+                    <span class="pill-label">FOC:</span>
+                    <span class="pill-value" id="headerFOC">11.8%</span>
+                </div>
+                <div class="spec-pill" id="headerSpinePill" style="display: none;">
+                    <span class="pill-label">Spine:</span>
+                    <span class="pill-value" id="headerSpine">45-50#</span>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <button id="undoBtn" class="btn-icon" title="Undo (Ctrl+Z)" disabled>↶</button>
+                <button id="redoBtn" class="btn-icon" title="Redo (Ctrl+Y)" disabled>↷</button>
+                <button id="smartRandomBtn" class="btn-action btn-smart">✨ Smart Random</button>
+                <div class="export-dropdown-wrapper">
+                    <button id="exportBtn" class="btn-primary">💾 Export ▼</button>
+                    <div class="export-menu" id="exportMenu">
+                        <button id="exportPngBtn">🖼️ Download PNG (HD)</button>
+                        <button id="exportSvgBtn">📐 Download SVG</button>
+                        <button id="copySpecsBtn">📋 Copy Specifications</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area: Left/Center Display + Right Controls Sidebar -->
+        <main class="app-main">
+            <!-- Studio Stage Area (Default paper background) -->
+            <section class="stage-container bg-paper" id="stageContainer">
+                <div class="stage-toolbar">
+                    <div class="bg-selector">
+                        <span class="toolbar-label">Background:</span>
+                        <button class="bg-btn active" data-bg="paper" title="Paper Sketch">📜</button>
+                        <button class="bg-btn" data-bg="dark" title="Dark Studio">🌙</button>
+                        <button class="bg-btn" data-bg="wood" title="Wood Table">🪵</button>
+                        <button class="bg-btn" data-bg="light" title="Light Studio">☀️</button>
+                    </div>
+                    <div class="zoom-controls">
+                        <button id="zoomOutBtn" class="zoom-btn" title="Zoom Out">-</button>
+                        <span id="zoomLevelText">100%</span>
+                        <button id="zoomInBtn" class="zoom-btn" title="Zoom In">+</button>
+                        <button id="zoomResetBtn" class="zoom-btn" title="Reset View & Position">⟲</button>
+                    </div>
+                </div>
+
+                <!-- SVG Viewport Wrap (Supports Mouse Drag / Pan & Wheel Zoom) -->
+                <div class="arrow-viewport" id="arrowViewport" title="Drag with mouse or touch to pan view">
+                    <svg id="arrowSvg" viewBox="0 0 950 240" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision">
+                        <defs>
+                            <!-- Ultra-Crisp High-Definition Vector Gradients -->
+                            <linearGradient id="shaftHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3"/>
+                                <stop offset="30%" stop-color="#ffffff" stop-opacity="0.05"/>
+                                <stop offset="70%" stop-color="#000000" stop-opacity="0.05"/>
+                                <stop offset="100%" stop-color="#000000" stop-opacity="0.35"/>
+                            </linearGradient>
+
+                            <linearGradient id="metalGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff"/>
+                                <stop offset="25%" stop-color="#e2e8f0"/>
+                                <stop offset="60%" stop-color="#94a3b8"/>
+                                <stop offset="100%" stop-color="#475569"/>
+                            </linearGradient>
+
+                            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#fff59d"/>
+                                <stop offset="30%" stop-color="#ffd54f"/>
+                                <stop offset="70%" stop-color="#ffb300"/>
+                                <stop offset="100%" stop-color="#ff6f00"/>
+                            </linearGradient>
+
+                            <linearGradient id="silverGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff"/>
+                                <stop offset="40%" stop-color="#e0e0e0"/>
+                                <stop offset="70%" stop-color="#bdbdbd"/>
+                                <stop offset="100%" stop-color="#757575"/>
+                            </linearGradient>
+
+                            <linearGradient id="nockHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.4"/>
+                                <stop offset="50%" stop-color="#ffffff" stop-opacity="0.0"/>
+                                <stop offset="100%" stop-color="#000000" stop-opacity="0.4"/>
+                            </linearGradient>
+
+                            <!-- Carbon Pattern Def -->
+                            <pattern id="carbonPattern" width="6" height="6" patternUnits="userSpaceOnUse">
+                                <rect width="6" height="6" fill="#0f172a"/>
+                                <polygon points="0,0 3,0 6,3 6,6" fill="#1e293b"/>
+                                <polygon points="3,0 6,0 3,3 0,3" fill="#334155"/>
+                            </pattern>
+                        </defs>
+
+                        <!-- SVG Groups dynamically rendered via script.js -->
+                        <g id="arrowGroup" transform="translate(0, 0) scale(1)">
+                            <g id="nockGroup"></g>
+                            <g id="shaftGroup"></g>
+                            <g id="crownDipGroup"></g>
+                            <g id="crestingGroup"></g>
+                            <g id="servingBackGroup"></g>
+                            <g id="fletchingGroup"></g>
+                            <g id="servingFrontGroup"></g>
+                            <g id="pointGroup"></g>
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- Spec Info Card under canvas -->
+                <div class="stage-footer">
+                    <div class="quick-info-tag">🎯 Style: <strong id="infoStyleTag">Shield Cut</strong></div>
+                    <div class="quick-info-tag">🪵 Material: <strong id="infoWoodTag">Port Orford Cedar</strong></div>
+                    <div class="quick-info-tag">⚔️ Point: <strong id="infoPointTag">Field 100gr</strong></div>
+                    <div class="quick-info-tag">⚙️ Nock: <strong id="infoNockTag">Bohning Plastic</strong></div>
+                </div>
+            </section>
+
+            <!-- Control Sidebar -->
+            <aside class="sidebar-container">
+                <nav class="tabs-nav">
+                    <button class="tab-btn active" data-tab="tab-fletching" title="Fletchings">🪶 Fletching</button>
+                    <button class="tab-btn" data-tab="tab-shaft" title="Shaft & Material">🪵 Shaft</button>
+                    <button class="tab-btn" data-tab="tab-hardware" title="Point & Nock">🎯 Hardware</button>
+                    <button class="tab-btn" data-tab="tab-cresting" title="Cresting Patterns">🎨 Cresting</button>
+                    <button class="tab-btn" data-tab="tab-specs" title="Specifications & Calculations" style="display: none;">⚖️ Specs</button>
+                </nav>
+
+                <div class="tabs-content">
+                    <!-- TAB 1: FLETCHING -->
+                    <div class="tab-pane active" id="tab-fletching">
+                        <div class="panel-section">
+                            <h3>Fletching Cut & Shape</h3>
+                            <div class="shape-selector-grid">
+                                <label class="shape-card active">
+                                    <input type="radio" name="featherShape" value="shield" checked>
+                                    <div class="shape-preview shape-shield"></div>
+                                    <span>Shield</span>
+                                </label>
+                                <label class="shape-card">
+                                    <input type="radio" name="featherShape" value="banana">
+                                    <div class="shape-preview shape-banana"></div>
+                                    <span>Banana</span>
+                                </label>
+                                <label class="shape-card">
+                                    <input type="radio" name="featherShape" value="parabolic">
+                                    <div class="shape-preview shape-parabolic"></div>
+                                    <span>Parabolic</span>
+                                </label>
+                                <label class="shape-card">
+                                    <input type="radio" name="featherShape" value="batman">
+                                    <div class="shape-preview shape-batman"></div>
+                                    <span>Batman</span>
+                                </label>
+                                <label class="shape-card">
+                                    <input type="radio" name="featherShape" value="traditional">
+                                    <div class="shape-preview shape-traditional"></div>
+                                    <span>Traditional</span>
+                                </label>
+                                <label class="shape-card">
+                                    <input type="radio" name="featherShape" value="flu-flu">
+                                    <div class="shape-preview shape-flu-flu"></div>
+                                    <span>Flu-Flu</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>Feather Dimensions</h3>
+                            <div class="control-row">
+                                <label>Feather Length: <span id="featherLengthVal">4.0"</span></label>
+                                <input type="range" id="featherLength" min="2.5" max="5.5" step="0.25" value="4.0">
+                            </div>
+                            <div class="control-row">
+                                <label>Profile Height: <span id="featherHeightVal">100%</span></label>
+                                <input type="range" id="featherHeight" min="60" max="130" value="100">
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>Feather Colors</h3>
+                            <div class="color-pickers-grid">
+                                <div class="color-box">
+                                    <div class="color-box-header">
+                                        <label for="feather1Color">Cock Feather (F1)</label>
+                                        <button id="copyF1toF2" class="copy-btn" title="Copy F1 color to F2">Copy F1→F2</button>
+                                    </div>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="feather1Color" value="#DC2626">
+                                        <span class="color-hex" id="feather1Hex">#DC2626</span>
+                                    </div>
+                                </div>
+
+                                <div class="color-box">
+                                    <div class="color-box-header">
+                                        <label for="feather2Color">Hen Feather 1 (F2)</label>
+                                        <button id="copyF2toF3" class="copy-btn" title="Copy F2 color to F3">Copy F2→F3</button>
+                                    </div>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="feather2Color" value="#2563EB">
+                                        <span class="color-hex" id="feather2Hex">#2563EB</span>
+                                    </div>
+                                </div>
+
+                                <div class="color-box">
+                                    <label for="feather3Color">Hen Feather 2 (F3)</label>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="feather3Color" value="#2563EB">
+                                        <span class="color-hex" id="feather3Hex">#2563EB</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>Thread Serving Wrap</h3>
+                            <div class="toggle-row">
+                                <label for="showFrontServing" class="toggle-label">Show Front Serving Wrap</label>
+                                <input type="checkbox" id="showFrontServing" class="toggle-switch" checked>
+                            </div>
+                            <div class="toggle-row">
+                                <label for="showBackServing" class="toggle-label">Show Back Serving Wrap</label>
+                                <input type="checkbox" id="showBackServing" class="toggle-switch" checked>
+                            </div>
+                            <div class="color-box margin-top">
+                                <label for="servingColor">Serving Thread Color</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="servingColor" value="#1E293B">
+                                    <span class="color-hex" id="servingHex">#1E293B</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: SHAFT & MATERIALS -->
+                    <div class="tab-pane" id="tab-shaft">
+                        <div class="panel-section">
+                            <h3>Arrow Length</h3>
+                            <div class="control-row">
+                                <label>Arrow Shaft Length: <span id="arrowLengthVal">30.0"</span></label>
+                                <input type="range" id="arrowLength" min="24.0" max="34.0" step="0.5" value="30.0">
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>Shaft Material</h3>
+                            <div class="wood-selector-grid">
+                                <label class="wood-card active">
+                                    <input type="radio" name="woodType" value="cedar" checked>
+                                    <div class="wood-swatch wood-cedar"></div>
+                                    <span>Port Orford Cedar</span>
+                                </label>
+                                <label class="wood-card">
+                                    <input type="radio" name="woodType" value="spruce">
+                                    <div class="wood-swatch wood-spruce"></div>
+                                    <span>Sitka Spruce</span>
+                                </label>
+                                <label class="wood-card">
+                                    <input type="radio" name="woodType" value="pine">
+                                    <div class="wood-swatch wood-pine"></div>
+                                    <span>Traditional Pine</span>
+                                </label>
+                                <label class="wood-card">
+                                    <input type="radio" name="woodType" value="bamboo">
+                                    <div class="wood-swatch wood-bamboo"></div>
+                                    <span>Asian Bamboo</span>
+                                </label>
+                                <label class="wood-card">
+                                    <input type="radio" name="woodType" value="douglas">
+                                    <div class="wood-swatch wood-douglas"></div>
+                                    <span>Douglas Fir</span>
+                                </label>
+                                <label class="wood-card">
+                                    <input type="radio" name="woodType" value="carbon">
+                                    <div class="wood-swatch wood-carbon"></div>
+                                    <span>Carbon Fiber ⚡</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>Shaft Stain & Painting</h3>
+                            <div class="toggle-row">
+                                <label for="enableShaftStain" class="toggle-label">Enable Shaft Stain</label>
+                                <input type="checkbox" id="enableShaftStain" class="toggle-switch">
+                            </div>
+
+                            <div id="shaftStainControlsContainer" style="display:none;" class="margin-top">
+                                <div class="toggle-row">
+                                    <label for="useSingleShaftColor" class="toggle-label">Single Color Stain</label>
+                                    <input type="checkbox" id="useSingleShaftColor" class="toggle-switch" checked>
+                                </div>
+
+                                <div class="color-pickers-grid margin-top">
+                                    <div class="color-box">
+                                        <label for="shaftBackColor">Stain Color (Rear)</label>
+                                        <div class="color-input-wrapper">
+                                            <input type="color" id="shaftBackColor" value="#D97706">
+                                            <span class="color-hex" id="shaftBackHex">#D97706</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-box" id="shaftFrontColorBox" style="display:none;">
+                                        <label for="shaftFrontColor">Stain Color (Front)</label>
+                                        <div class="color-input-wrapper">
+                                            <input type="color" id="shaftFrontColor" value="#D97706">
+                                            <span class="color-hex" id="shaftFrontHex">#D97706</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>Crown Dip Painting</h3>
+                            <div class="toggle-row">
+                                <label for="enableCrownDip" class="toggle-label">Enable Crown Dip</label>
+                                <input type="checkbox" id="enableCrownDip" class="toggle-switch">
+                            </div>
+
+                            <div id="crownDipControls" style="display:none;">
+                                <div class="control-row">
+                                    <label>Crown Dip Length: <span id="crownLengthVal">5.5"</span></label>
+                                    <input type="range" id="crownLength" min="1.0" max="10.0" step="0.25" value="5.5">
+                                </div>
+                                <div class="color-box margin-top">
+                                    <label for="crownDipColor">Crown Lacquer Color</label>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="crownDipColor" value="#F8FAFC">
+                                        <span class="color-hex" id="crownDipHex">#F8FAFC</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: HARDWARE (GROT I NOCK) -->
+                    <div class="tab-pane" id="tab-hardware">
+                        <div class="panel-section">
+                            <h3>Arrowhead & Point Type</h3>
+                            <div class="selector-grid">
+                                <label class="select-card active">
+                                    <input type="radio" name="pointType" value="field" checked>
+                                    <span class="select-icon">🎯</span>
+                                    <span>Field Point</span>
+                                </label>
+                                <label class="select-card">
+                                    <input type="radio" name="pointType" value="bullet">
+                                    <span class="select-icon">🚀</span>
+                                    <span>Bullet Point</span>
+                                </label>
+                                <label class="select-card">
+                                    <input type="radio" name="pointType" value="broadhead2">
+                                    <span class="select-icon">⚔️</span>
+                                    <span>Broadhead (2-Blade)</span>
+                                </label>
+                                <label class="select-card">
+                                    <input type="radio" name="pointType" value="broadhead3">
+                                    <span class="select-icon">🗡️</span>
+                                    <span>Broadhead (3-Blade)</span>
+                                </label>
+                                <label class="select-card">
+                                    <input type="radio" name="pointType" value="bodkin">
+                                    <span class="select-icon">🛡️</span>
+                                    <span>Bodkin Point</span>
+                                </label>
+                                <label class="select-card">
+                                    <input type="radio" name="pointType" value="blunt">
+                                    <span class="select-icon">🪵</span>
+                                    <span>Blunt Point</span>
+                                </label>
+                            </div>
+
+                            <div class="color-box margin-top">
+                                <label for="pointColor">Point Finish Color</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="pointColor" value="#94A3B8">
+                                    <span class="color-hex" id="pointHex">#94A3B8</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>Nock Type & Design</h3>
+                            <div class="selector-grid">
+                                <label class="select-card active">
+                                    <input type="radio" name="nockType" value="plastic" checked>
+                                    <span class="select-icon">🔴</span>
+                                    <span>Bohning Plastic</span>
+                                </label>
+                                <label class="select-card">
+                                    <input type="radio" name="nockType" value="selfnock">
+                                    <span class="select-icon">🪵</span>
+                                    <span>Self-Nock Wood</span>
+                                </label>
+                                <label class="select-card">
+                                    <input type="radio" name="nockType" value="horn">
+                                    <span class="select-icon">🦌</span>
+                                    <span>Horn Insert</span>
+                                </label>
+                                <label class="select-card">
+                                    <input type="radio" name="nockType" value="metal">
+                                    <span class="select-icon">⚡</span>
+                                    <span>Metal Nock</span>
+                                </label>
+                            </div>
+
+                            <div class="color-box margin-top">
+                                <label for="nockColor">Nock Color</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="nockColor" value="#B45309">
+                                    <span class="color-hex" id="nockHex">#B45309</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: CRESTING -->
+                    <div class="tab-pane" id="tab-cresting">
+                        <div class="panel-section">
+                            <h3>Cresting Pattern</h3>
+                            <div class="toggle-row">
+                                <label for="showCresting" class="toggle-label">Show Cresting Pattern</label>
+                                <input type="checkbox" id="showCresting" class="toggle-switch">
+                            </div>
+
+                            <div id="crestingControlsContainer" class="margin-top" style="display:none;">
+                                <div class="control-row">
+                                    <label>Cresting Offset from Front Serving: <span id="crestingStartOffsetVal">0.30"</span></label>
+                                    <input type="range" id="crestingStartOffset" min="0.0" max="6.0" step="0.05" value="0.30">
+                                </div>
+
+                                <div class="cresting-top-actions margin-top">
+                                    <button id="addCrestingBandBtn" class="btn-action btn-smart" style="width:100%; margin-bottom:12px;">➕ Add New Cresting Band</button>
+                                </div>
+
+                                <!-- Dynamic List of Cresting Bands -->
+                                <div class="cresting-items-list" id="crestingBandsList">
+                                    <!-- Populated dynamically via script.js -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 5: SPECS & CALCULATOR -->
+                    <div class="tab-pane" id="tab-specs">
+                        <div class="panel-section">
+                            <h3>Arrow Physical Specifications <span class="beta-badge-inline">BETA</span></h3>
+
+                            <div class="control-row">
+                                <label>Draw Length: <span id="arrowLengthVal">30.0"</span></label>
+                                <input type="range" id="arrowLength" min="24.0" max="34.0" step="0.5" value="30.0">
+                            </div>
+
+                            <div class="control-row">
+                                <label>Draw Weight: <span id="drawWeightVal">45 lbs</span></label>
+                                <input type="range" id="drawWeight" min="25" max="75" step="1" value="45">
+                            </div>
+
+                            <div class="control-row">
+                                <label>Point Weight: <span id="pointWeightVal">100 gr</span></label>
+                                <input type="range" id="pointWeight" min="70" max="200" step="5" value="100">
+                            </div>
+                        </div>
+
+                        <div class="panel-section">
+                            <h3>Archery Calculation Results <span class="beta-badge-inline">BETA</span></h3>
+                            <div class="specs-calc-grid">
+                                <div class="calc-card">
+                                    <span class="calc-label">Total Mass</span>
+                                    <span class="calc-val" id="calcTotalGrains">485 gr</span>
+                                    <span class="calc-sub" id="calcTotalGrams">(31.4 g)</span>
+                                </div>
+                                <div class="calc-card">
+                                    <span class="calc-label">Front of Center (FOC)</span>
+                                    <span class="calc-val" id="calcFOC">11.8%</span>
+                                    <span class="calc-sub" id="calcFocStatus">Ideal (Target/3D)</span>
+                                </div>
+                                <div class="calc-card">
+                                    <span class="calc-label">Suggested Spine</span>
+                                    <span class="calc-val" id="calcSpine">45-50#</span>
+                                    <span class="calc-sub">Shaft Stiffness</span>
+                                </div>
+                                <div class="calc-card">
+                                    <span class="calc-label">GPI (Grains / Inch)</span>
+                                    <span class="calc-val" id="calcGPI">13.2 gr/in</span>
+                                    <span class="calc-sub">Shaft Weight</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Bottom Action Bar & Presets Gallery -->
+        <footer class="app-footer">
+            <div class="presets-section">
+                <span class="footer-label">Preset Styles:</span>
+                <div class="preset-chips" id="presetChipsContainer">
+                    <button class="preset-chip active" data-preset="robin">🏹 Robin Hood</button>
+                    <button class="preset-chip" data-preset="legolas">🧝 Elven Arrow</button>
+                    <button class="preset-chip" data-preset="urukhai">⚔️ Uruk-hai War Arrow</button>
+                </div>
+            </div>
+
+            <div class="custom-preset-actions">
+                <input type="text" id="presetNameInput" placeholder="Custom preset name..." maxlength="25">
+                <button id="saveCustomPresetBtn" class="btn-action">💾 Save Preset</button>
+                <select id="userPresetsSelect" class="preset-select">
+                    <option value="">-- My Saved Presets --</option>
+                </select>
+                <button id="deleteUserPresetBtn" class="btn-action btn-danger" title="Delete selected preset">🗑️</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Script file -->
+    <script src="script.js"></script>
+</body>
+</html>
