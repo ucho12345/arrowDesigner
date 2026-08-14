@@ -1219,3 +1219,127 @@ input[type="color"]::-webkit-color-swatch {
     }
 }
 
+/* View tools in stage toolbar */
+.view-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-tools .bg-btn {
+    width: auto;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Modal Overlay & Axial Cross-Section View */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 440px;
+    padding: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-heading);
+}
+
+.close-modal-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.close-modal-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+.axial-canvas-wrap {
+    background: #0f172a;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.axial-canvas-wrap svg {
+    width: 220px;
+    height: 220px;
+}
+
+.axial-info {
+    font-size: 0.85rem;
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px;
+    border-radius: 8px;
+}
+
+/* Touch target optimizations for mobile */
+.btn-remove-band {
+    min-height: 36px;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+/* Mobile Landscape Constraints */
+@media (max-height: 500px) and (orientation: landscape) {
+    .stage-container {
+        height: 180px !important;
+        min-height: 160px !important;
+        position: relative !important;
+    }
+}
+
+

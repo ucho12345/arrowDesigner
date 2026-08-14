@@ -13,15 +13,15 @@
         carbon: '#0F172A'
     };
 
-    // Physical Dimension Scale: 735 SVG px = 29.0 inches -> 1 inch = 25.3448 px
-    const INCH_TO_PX = 25.3448;
+    // Physical Dimension Scale: 735 SVG px = 30.0 inches -> 1 inch = 24.5 px
+    const INCH_TO_PX = 24.5;
 
     // ----------------------------------------------------------------------
     // State Management & Constants
     // ----------------------------------------------------------------------
     const defaultState = {
         // Fletchings
-        featherShape: 'shield',       // shield, banana, parabolic, batman, traditional, flu-flu
+        featherShape: 'shield',       // shield, banana, parabolic, batman, traditional, legolas-style, flu-flu
         featherLength: 4.0,           // inches (2.5 - 5.5)
         featherHeight: 100,           // % (60 - 130)
         feather1Color: '#DC2626',
@@ -33,6 +33,7 @@
 
         // Shaft & Wood / Materials (STAIN OFF BY DEFAULT)
         woodType: 'cedar',            // cedar, spruce, pine, bamboo, douglas, carbon
+        shaftDiameter: 8.0,           // mm (4.0 - 10.0)
         enableShaftStain: false,      // Stain OFF by default!
         useSingleShaftColor: true,
         shaftBackColor: '#D97706',
@@ -44,7 +45,7 @@
         // Hardware
         pointType: 'field',           // field, bullet, broadhead2, broadhead3, bodkin, blunt
         pointColor: '#94A3B8',
-        nockType: 'plastic',          // plastic, selfnock, horn, metal
+        nockType: 'plastic',          // plastic, selfnock, horn
         nockColor: '#B45309',
 
         // Dynamic Cresting Bands Array (Inches: width & offset in ")
@@ -176,6 +177,7 @@
         servingColor: document.getElementById('servingColor'), servingHex: document.getElementById('servingHex'),
 
         // Shaft Controls
+        shaftDiameter: document.getElementById('shaftDiameter'), shaftDiameterVal: document.getElementById('shaftDiameterVal'),
         enableShaftStain: document.getElementById('enableShaftStain'),
         shaftStainControlsContainer: document.getElementById('shaftStainControlsContainer'),
         useSingleShaftColor: document.getElementById('useSingleShaftColor'),
@@ -190,6 +192,8 @@
         // Hardware Controls
         pointColor: document.getElementById('pointColor'), pointHex: document.getElementById('pointHex'),
         nockColor: document.getElementById('nockColor'), nockHex: document.getElementById('nockHex'),
+
+
 
         // Dynamic Cresting Controls
         showCresting: document.getElementById('showCresting'),
@@ -252,8 +256,10 @@
 
         // Geometry Coordinates (Base SVG ViewBox: 0 0 950 240, Center Y = 120)
         const centerY = 120;
-        const shaftY = centerY - 5;
-        const shaftHeight = 10;
+        const shaftDiameterMm = parseFloat(state.shaftDiameter || 8.0);
+        const shaftH = (shaftDiameterMm / 8.0) * 8.0;
+        const shaftY = centerY - (shaftH / 2);
+        const shaftHeight = shaftH;
         const nockStartX = 40;
         const shaftStartX = 75;
         // Dynamic shaft length based on physical Arrow Length (baseline: 30.0" = 735px)
@@ -279,15 +285,17 @@
         renderFletchings(featherStartX, centerY, featherPxLen, featherPxHeight);
 
         // 4. RENDER SERVINGS & DYNAMIC CRESTING POSITION
-        let frontServingEndX = featherStartX + featherPxLen + 2;
+        let frontServingEndX = featherStartX + featherPxLen - 4 + 14;
 
         if (state.showBackServing) {
+            // Back serving wrap (original position before fletchings start)
             renderServing(elements.servingBackGroup, featherStartX - 15, shaftY - 1, 14, shaftHeight + 2);
         }
 
         if (state.showFrontServing) {
-            renderServing(elements.servingFrontGroup, featherStartX + featherPxLen + 2, shaftY - 1, 14, shaftHeight + 2);
-            frontServingEndX += 14;
+            // Front serving wrap (overlaps feather end quill by ~4px)
+            renderServing(elements.servingFrontGroup, featherStartX + featherPxLen - 4, shaftY - 1, 14, shaftHeight + 2);
+            frontServingEndX = featherStartX + featherPxLen - 4 + 14;
         }
 
         // 5. RENDER DYNAMIC CRESTING BANDS (Inches Conversion)
@@ -356,9 +364,9 @@
         });
         elements.shaftGroup.appendChild(highlightLayer);
 
-        // Vector Grain Lines (for wood materials)
+        // Vector Grain Lines (Subtle clean highlights)
         if (state.woodType !== 'carbon') {
-            const grainYPositions = [y + 2, y + 4.5, y + 7.5];
+            const grainYPositions = [y + (height * 0.25), y + (height * 0.5), y + (height * 0.75)];
             grainYPositions.forEach((lineY, idx) => {
                 const line = createSVGElement('line', {
                     x1: x, y1: lineY, x2: x + width, y2: lineY,
@@ -472,6 +480,8 @@
         });
         elements.fletchingGroup.appendChild(f3);
 
+
+
         if (state.featherShape === 'flu-flu') {
             renderFeatherBarbs(startX, centerY, len, h * 0.5, 'middle', state.feather3Color);
         }
@@ -569,10 +579,10 @@
                 return `M ${x} ${baseY} Q ${x + (len * 0.25)} ${baseY + (dir * h * 1.1)}, ${x + (len * 0.6)} ${baseY + (dir * h * 1.05)} Q ${x + (len * 0.85)} ${baseY + (dir * h * 0.8)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
 
             case 'parabolic':
-                return `M ${x} ${baseY} Q ${x + (len * 0.12)} ${topY * 1.04}, ${x + (len * 0.32)} ${topY} Q ${x + (len * 0.72)} ${topY * 0.98}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
+                return `M ${x} ${baseY} Q ${x + (len * 0.12)} ${baseY + (dir * h * 1.04)}, ${x + (len * 0.32)} ${topY} Q ${x + (len * 0.72)} ${baseY + (dir * h * 0.98)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
 
             case 'batman':
-                return `M ${x} ${baseY} Q ${x + (len * 0.08)} ${topY}, ${x + (len * 0.22)} ${topY} Q ${x + (len * 0.38)} ${baseY + (dir * h * 0.35)}, ${x + (len * 0.55)} ${topY} Q ${x + (len * 0.8)} ${topY * 0.95}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
+                return `M ${x} ${baseY} Q ${x + (len * 0.08)} ${topY}, ${x + (len * 0.22)} ${topY} Q ${x + (len * 0.38)} ${baseY + (dir * h * 0.35)}, ${x + (len * 0.55)} ${topY} Q ${x + (len * 0.8)} ${baseY + (dir * h * 0.95)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
 
             case 'traditional':
                 return `M ${x} ${baseY} L ${x + (len * 0.12)} ${topY} L ${x + (len * 0.8)} ${topY} Q ${x + (len * 0.92)} ${baseY + (dir * h * 0.4)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
@@ -592,11 +602,11 @@
                 return fluD + ` Z`;
 
             case 'legolas-style':
-                return `M ${x + (len * 0.12)} ${baseY} L ${x} ${topY} Q ${x + (len * 0.4)} ${topY * 1.02}, ${x + (len * 0.7)} ${baseY + (dir * h * 0.45)} Q ${x + (len * 0.9)} ${baseY + (dir * h * 0.15)}, ${x + len} ${baseY} L ${x + (len * 0.12)} ${baseY} Z`;
+                return `M ${x + (len * 0.12)} ${baseY} L ${x} ${topY} Q ${x + (len * 0.4)} ${baseY + (dir * h * 1.02)}, ${x + (len * 0.7)} ${baseY + (dir * h * 0.45)} Q ${x + (len * 0.9)} ${baseY + (dir * h * 0.15)}, ${x + len} ${baseY} L ${x + (len * 0.12)} ${baseY} Z`;
 
             case 'shield':
             default:
-                return `M ${x} ${baseY} Q ${x + (len * 0.08)} ${baseY + (dir * h * 0.7)}, ${x + (len * 0.15)} ${topY} Q ${x + (len * 0.3)} ${topY * 1.02}, ${x + (len * 0.7)} ${baseY + (dir * h * 0.65)} Q ${x + (len * 0.9)} ${baseY + (dir * h * 0.3)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
+                return `M ${x} ${baseY} Q ${x + (len * 0.08)} ${baseY + (dir * h * 0.7)}, ${x + (len * 0.15)} ${topY} Q ${x + (len * 0.3)} ${baseY + (dir * h * 1.02)}, ${x + (len * 0.7)} ${baseY + (dir * h * 0.65)} Q ${x + (len * 0.9)} ${baseY + (dir * h * 0.3)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
         }
     }
 
@@ -682,6 +692,12 @@
             elements.nockGroup.appendChild(groove);
         }
     }
+
+
+
+
+
+
 
     // Point Renderer
     function renderPoint(shaftEndX, centerY) {
@@ -1016,24 +1032,43 @@
             isPanning = false;
         });
 
-        // Mobile Touch Panning Gestures
+        // Mobile Touch Panning & Pinch Gestures
+        let initialPinchDistance = 0;
+        let initialZoom = 1;
+
         elements.arrowViewport.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 isPanning = true;
                 panStartX = e.touches[0].clientX - state.panX;
                 panStartY = e.touches[0].clientY - state.panY;
+            } else if (e.touches.length === 2) {
+                isPanning = false;
+                initialPinchDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                initialZoom = state.zoom;
             }
         }, { passive: true });
 
         window.addEventListener('touchmove', (e) => {
-            if (!isPanning || e.touches.length !== 1) return;
-            state.panX = e.touches[0].clientX - panStartX;
-            state.panY = e.touches[0].clientY - panStartY;
-            setZoomAndPan(state.zoom, state.panX, state.panY);
+            if (e.touches.length === 2 && initialPinchDistance > 0) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const factor = dist / initialPinchDistance;
+                setZoomAndPan(Math.min(Math.max(initialZoom * factor, 0.5), 3.0), state.panX, state.panY);
+            } else if (isPanning && e.touches.length === 1) {
+                state.panX = e.touches[0].clientX - panStartX;
+                state.panY = e.touches[0].clientY - panStartY;
+                setZoomAndPan(state.zoom, state.panX, state.panY);
+            }
         }, { passive: true });
 
         window.addEventListener('touchend', () => {
             isPanning = false;
+            initialPinchDistance = 0;
         });
 
         // Mouse Wheel Zoom
@@ -1043,15 +1078,25 @@
             setZoomAndPan(state.zoom + delta);
         }, { passive: false });
 
-        // Shape Radio Cards
-        bindRadioGroup('featherShape', (val) => { state.featherShape = val; triggerUpdate(); });
-        bindRadioGroup('woodType', (val) => { state.woodType = val; triggerUpdate(); });
-        bindRadioGroup('pointType', (val) => { state.pointType = val; triggerUpdate(); });
-        bindRadioGroup('nockType', (val) => { state.nockType = val; triggerUpdate(); });
+        // View Tools & 3D Perspective Mode
+        if (elements.toggle3DViewBtn) {
+            elements.toggle3DViewBtn.addEventListener('click', () => {
+                state.is3DView = !state.is3DView;
+                elements.toggle3DViewBtn.classList.toggle('active', state.is3DView);
+                triggerUpdate(true);
+            });
+        }
 
-        // Range Sliders (Inches)
+        // Shape Radio Cards
+        bindRadioGroup('featherShape', (val) => { state.featherShape = val; triggerUpdate(true); });
+        bindRadioGroup('woodType', (val) => { state.woodType = val; triggerUpdate(true); });
+        bindRadioGroup('pointType', (val) => { state.pointType = val; triggerUpdate(true); });
+        bindRadioGroup('nockType', (val) => { state.nockType = val; triggerUpdate(true); });
+
+        // Range Sliders (Inches & Dimensions)
         bindRangeInput(elements.featherLength, elements.featherLengthVal, '"', (v) => state.featherLength = parseFloat(v));
         bindRangeInput(elements.featherHeight, elements.featherHeightVal, '%', (v) => state.featherHeight = parseInt(v));
+        bindRangeInput(elements.shaftDiameter, elements.shaftDiameterVal, ' mm', (v) => state.shaftDiameter = parseFloat(v));
         bindRangeInput(elements.crownLength, elements.crownLengthVal, '"', (v) => state.crownLength = parseFloat(v));
         bindRangeInput(elements.crestingStartOffset, elements.crestingStartOffsetVal, '"', (v) => state.crestingStartOffset = parseFloat(v));
         bindRangeInput(elements.arrowLength, elements.arrowLengthVal, '"', (v) => state.arrowLength = parseFloat(v));
@@ -1073,40 +1118,41 @@
         elements.copyF1toF2.addEventListener('click', () => {
             state.feather2Color = state.feather1Color;
             updateUIFromState();
-            triggerUpdate();
+            triggerUpdate(true);
         });
         elements.copyF2toF3.addEventListener('click', () => {
             state.feather3Color = state.feather2Color;
             updateUIFromState();
-            triggerUpdate();
+            triggerUpdate(true);
         });
 
         // Checkbox Toggles
+        if (elements.enableBarredFeathers) bindCheckbox(elements.enableBarredFeathers, (v) => state.enableBarredFeathers = v);
         bindCheckbox(elements.showFrontServing, (v) => state.showFrontServing = v);
         bindCheckbox(elements.showBackServing, (v) => state.showBackServing = v);
 
         bindCheckbox(elements.enableShaftStain, (v) => {
             state.enableShaftStain = v;
             elements.shaftStainControlsContainer.style.display = v ? 'block' : 'none';
-            triggerUpdate();
+            triggerUpdate(true);
         });
 
         bindCheckbox(elements.useSingleShaftColor, (v) => {
             state.useSingleShaftColor = v;
             elements.shaftFrontColorBox.style.display = v ? 'none' : 'block';
-            triggerUpdate();
+            triggerUpdate(true);
         });
         bindCheckbox(elements.enableCrownDip, (v) => {
             state.enableCrownDip = v;
             elements.crownDipControls.style.display = v ? 'block' : 'none';
-            triggerUpdate();
+            triggerUpdate(true);
         });
 
         // Cresting Controls & Add Band Action
         bindCheckbox(elements.showCresting, (v) => {
             state.showCresting = v;
             elements.crestingControlsContainer.style.display = v ? 'block' : 'none';
-            triggerUpdate();
+            triggerUpdate(true);
         });
 
         elements.addCrestingBandBtn.addEventListener('click', addCrestingBand);
@@ -1179,33 +1225,46 @@
     }
 
     function bindRangeInput(inputElem, labelElem, suffix, callback) {
+        if (!inputElem) return;
         inputElem.addEventListener('input', (e) => {
             const val = e.target.value;
             labelElem.textContent = val + suffix;
             callback(val);
-            triggerUpdate();
+            triggerUpdate(false);
         });
     }
 
     function bindColorInput(inputElem, hexElem, callback) {
+        if (!inputElem) return;
         inputElem.addEventListener('input', (e) => {
             const val = e.target.value;
             hexElem.textContent = val.toUpperCase();
             callback(val);
-            triggerUpdate();
+            triggerUpdate(false);
         });
     }
 
     function bindCheckbox(inputElem, callback) {
+        if (!inputElem) return;
         inputElem.addEventListener('change', (e) => {
             callback(e.target.checked);
-            triggerUpdate();
+            triggerUpdate(true);
         });
     }
 
-    function triggerUpdate() {
+    let historyDebounceTimer = null;
+
+    function triggerUpdate(immediate = false) {
         renderArrow();
-        saveStateToHistory();
+        if (immediate) {
+            if (historyDebounceTimer) clearTimeout(historyDebounceTimer);
+            saveStateToHistory();
+        } else {
+            if (historyDebounceTimer) clearTimeout(historyDebounceTimer);
+            historyDebounceTimer = setTimeout(() => {
+                saveStateToHistory();
+            }, 350);
+        }
     }
 
     // ----------------------------------------------------------------------
@@ -1229,11 +1288,14 @@
 
         elements.featherLength.value = state.featherLength; elements.featherLengthVal.textContent = state.featherLength + '"';
         elements.featherHeight.value = state.featherHeight; elements.featherHeightVal.textContent = state.featherHeight + '%';
+        if (elements.shaftDiameter) { elements.shaftDiameter.value = state.shaftDiameter || 8.0; elements.shaftDiameterVal.textContent = (state.shaftDiameter || 8.0) + ' mm'; }
         elements.crownLength.value = state.crownLength; elements.crownLengthVal.textContent = state.crownLength + '"';
         elements.crestingStartOffset.value = state.crestingStartOffset || 0.30; elements.crestingStartOffsetVal.textContent = (state.crestingStartOffset || 0.30) + '"';
         elements.arrowLength.value = state.arrowLength; elements.arrowLengthVal.textContent = state.arrowLength + '"';
         elements.drawWeight.value = state.drawWeight; elements.drawWeightVal.textContent = state.drawWeight + ' lbs';
         elements.pointWeight.value = state.pointWeight; elements.pointWeightVal.textContent = state.pointWeight + ' gr';
+
+        if (elements.enableBarredFeathers) elements.enableBarredFeathers.checked = !!state.enableBarredFeathers;
 
         elements.feather1Color.value = state.feather1Color; elements.feather1Hex.textContent = state.feather1Color.toUpperCase();
         elements.feather2Color.value = state.feather2Color; elements.feather2Hex.textContent = state.feather2Color.toUpperCase();
@@ -1462,9 +1524,9 @@
     function copySpecsSummary() {
         const text = `🏹 ARROW SPECIFICATION:
 • Fletching Shape: ${state.featherShape.toUpperCase()} (${state.featherLength}")
+• Shaft Material: ${state.woodType.toUpperCase()} (Diameter: ${state.shaftDiameter || 8.0}mm) (Stain: ${state.enableShaftStain ? 'YES' : 'NO'})
 • Crown Dip Length: ${state.enableCrownDip ? state.crownLength + '"' : 'NONE'}
 • Cresting Offset: ${state.showCresting ? state.crestingStartOffset + '"' : 'NONE'}
-• Shaft Material: ${state.woodType.toUpperCase()} (Stain: ${state.enableShaftStain ? 'YES' : 'NO'})
 • Point Type: ${state.pointType.toUpperCase()} (${state.pointWeight} gr)
 • Nock Type: ${state.nockType.toUpperCase()}
 • Arrow Length: ${state.arrowLength}"`;
