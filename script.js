@@ -150,8 +150,10 @@
         undoBtn: document.getElementById('undoBtn'),
         redoBtn: document.getElementById('redoBtn'),
         smartRandomBtn: document.getElementById('smartRandomBtn'),
+        headerShareBtn: document.getElementById('headerShareBtn'),
         exportBtn: document.getElementById('exportBtn'),
         exportMenu: document.getElementById('exportMenu'),
+        copyShareLinkBtn: document.getElementById('copyShareLinkBtn'),
         exportPngBtn: document.getElementById('exportPngBtn'),
         exportSvgBtn: document.getElementById('exportSvgBtn'),
         copySpecsBtn: document.getElementById('copySpecsBtn'),
@@ -241,9 +243,356 @@
     function init() {
         bindEvents();
         loadUserPresetsFromStorage();
-        saveStateToHistory(true);
+
+        // Check if URL contains shareable hash build configuration
+        if (window.location.hash) {
+            try {
+                deserializeHashToState(window.location.hash);
+            } catch (e) {
+                console.warn('Could not load URL hash:', e);
+            }
+        }
+
+        // Render immediately on start
         updateUIFromState();
         renderArrow();
+
+        // Save baseline history
+        saveStateToHistory(true);
+
+        // Listen for browser back/forward history navigation with URL hash
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash) {
+                try {
+                    if (deserializeHashToState(window.location.hash)) {
+                        updateUIFromState();
+                        renderArrow();
+                    }
+                } catch (e) {
+                    console.warn('Hash navigation error:', e);
+                }
+            }
+        });
+    }
+
+    // ----------------------------------------------------------------------
+    // Shareable URL (Ultra-Short Binary Obfuscated Base64url Token)
+    // ----------------------------------------------------------------------
+    const shapeList = ['shield', 'banana', 'parabolic', 'batman', 'traditional', 'legolas-style', 'flu-flu'];
+    const woodList = ['cedar', 'spruce', 'pine', 'bamboo', 'douglas', 'carbon'];
+    const pointList = ['field', 'bullet', 'broadhead2', 'broadhead3', 'bodkin', 'blunt'];
+    const nockList = ['plastic', 'selfnock', 'horn'];
+    const bgList = ['paper', 'dark', 'wood', 'light'];
+
+    function parseRGBBytes(hex) {
+        const h = (hex || '#000000').replace('#', '');
+        const fullHex = h.length === 3 ? h.split('').map(x => x + x).join('') : h.padEnd(6, '0').substring(0, 6);
+        const num = parseInt(fullHex, 16) || 0;
+        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+
+    function rgbToHex(r, g, b) {
+        return '#' + [r, g, b].map(x => (x || 0).toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    function serializeStateToHash() {
+        try {
+            const bytes = [];
+            const fS_idx = Math.max(0, shapeList.indexOf(state.featherShape));
+            const wT_idx = Math.max(0, woodList.indexOf(state.woodType));
+            const pT_idx = Math.max(0, pointList.indexOf(state.pointType));
+            const nT_idx = Math.max(0, nockList.indexOf(state.nockType));
+            const bg_idx = Math.max(0, bgList.indexOf(state.stageBg));
+
+            // Packed Enums (2 bytes)
+            bytes.push(((fS_idx & 0x0F) << 4) | (wT_idx & 0x0F));
+            bytes.push(((pT_idx & 0x0F) << 4) | (nT_idx & 0x0F));
+
+            // Packed BG + Diameter (1 byte)
+            const diamStep = Math.max(0, Math.min(15, Math.round(((state.shaftDiameter || 8.0) - 4.0) * 2)));
+            bytes.push(((bg_idx & 0x03) << 4) | (diamStep & 0x0F));
+
+            // Boolean Flags (1 byte)
+            let flags = 0;
+            if (state.enableShaftStain) flags |= (1 << 0);
+            if (state.useSingleShaftColor) flags |= (1 << 1);
+            if (state.enableCrownDip) flags |= (1 << 2);
+            if (state.enableSpiralWrap) flags |= (1 << 3);
+            if (state.showFrontServing) flags |= (1 << 4);
+            if (state.showBackServing) flags |= (1 << 5);
+            if (state.showCresting) flags |= (1 << 6);
+            bytes.push(flags);
+
+            // Numerical Dimensions (7 bytes)
+            bytes.push(Math.max(0, Math.min(255, Math.round((parseFloat(state.featherLength) || 4.0) * 10))));
+            bytes.push(Math.max(0, Math.min(255, Math.round(parseInt(state.featherHeight) || 100))));
+            bytes.push(Math.max(0, Math.min(255, Math.round((parseFloat(state.crownLength) || 5.5) * 10))));
+            bytes.push(Math.max(0, Math.min(255, Math.round(parseInt(state.pointWeight) || 100))));
+            bytes.push(Math.max(0, Math.min(255, Math.round((parseFloat(state.arrowLength) || 30.0) * 2))));
+            bytes.push(Math.max(0, Math.min(255, Math.round(parseInt(state.drawWeight) || 45))));
+            bytes.push(Math.max(0, Math.min(255, Math.round((parseFloat(state.crestingStartOffset) || 0.30) * 100))));
+
+            // 10 Arrow Colors (30 bytes)
+            const colors = [
+                state.feather1Color,
+                state.feather2Color,
+                state.feather3Color,
+                state.shaftBackColor,
+                state.shaftFrontColor,
+                state.crownDipColor,
+                state.pointColor,
+                state.nockColor,
+                state.spiralWrapColor,
+                state.servingColor
+            ];
+            colors.forEach(c => bytes.push(...parseRGBBytes(c)));
+
+            // Dynamic Cresting Bands (5 bytes per band)
+            if (state.showCresting && state.crestingBands && state.crestingBands.length > 0) {
+                bytes.push(state.crestingBands.length);
+                state.crestingBands.forEach(b => {
+                    bytes.push(...parseRGBBytes(b.color));
+                    bytes.push(Math.max(0, Math.min(255, Math.round((parseFloat(b.width) || 0.25) * 100))));
+                    bytes.push(Math.max(0, Math.min(255, Math.round((parseFloat(b.offset) || 0.15) * 100))));
+                });
+            }
+
+            // Convert to URL-Safe Base64
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return 's=' + btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        } catch (e) {
+            console.warn('Failed to serialize binary token hash:', e);
+            return '';
+        }
+    }
+
+    function deserializeHashToState(hashStr) {
+        try {
+            if (!hashStr || hashStr.length < 3) return false;
+            let clean = hashStr.startsWith('#') ? hashStr.substring(1) : hashStr;
+
+            // 1. Ultra-Short Binary Token Format (s=...)
+            if (clean.startsWith('s=')) {
+                clean = clean.substring(2);
+                let base64 = clean.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) base64 += '=';
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                if (bytes.length < 41) return false;
+
+                // Enums
+                state.featherShape = shapeList[(bytes[0] >> 4) & 0x0F] || 'shield';
+                state.woodType = woodList[bytes[0] & 0x0F] || 'cedar';
+                state.pointType = pointList[(bytes[1] >> 4) & 0x0F] || 'field';
+                state.nockType = nockList[bytes[1] & 0x0F] || 'plastic';
+                state.stageBg = bgList[(bytes[2] >> 4) & 0x03] || 'paper';
+                state.shaftDiameter = parseFloat((4.0 + (bytes[2] & 0x0F) * 0.5).toFixed(1));
+
+                // Flags
+                const flags = bytes[3];
+                state.enableShaftStain = (flags & (1 << 0)) !== 0;
+                state.useSingleShaftColor = (flags & (1 << 1)) !== 0;
+                state.enableCrownDip = (flags & (1 << 2)) !== 0;
+                state.enableSpiralWrap = (flags & (1 << 3)) !== 0;
+                state.showFrontServing = (flags & (1 << 4)) !== 0;
+                state.showBackServing = (flags & (1 << 5)) !== 0;
+                state.showCresting = (flags & (1 << 6)) !== 0;
+
+                // Dimensions
+                state.featherLength = parseFloat((bytes[4] / 10).toFixed(1)) || 4.0;
+                state.featherHeight = bytes[5] || 100;
+                state.crownLength = parseFloat((bytes[6] / 10).toFixed(1)) || 5.5;
+                state.pointWeight = bytes[7] || 100;
+                state.arrowLength = parseFloat((bytes[8] / 2).toFixed(1)) || 30.0;
+                state.drawWeight = bytes[9] || 45;
+                state.crestingStartOffset = parseFloat((bytes[10] / 100).toFixed(2)) || 0.30;
+
+                // Colors
+                state.feather1Color = rgbToHex(bytes[11], bytes[12], bytes[13]);
+                state.feather2Color = rgbToHex(bytes[14], bytes[15], bytes[16]);
+                state.feather3Color = rgbToHex(bytes[17], bytes[18], bytes[19]);
+                state.shaftBackColor = rgbToHex(bytes[20], bytes[21], bytes[22]);
+                state.shaftFrontColor = rgbToHex(bytes[23], bytes[24], bytes[25]);
+                state.crownDipColor = rgbToHex(bytes[26], bytes[27], bytes[28]);
+                state.pointColor = rgbToHex(bytes[29], bytes[30], bytes[31]);
+                state.nockColor = rgbToHex(bytes[32], bytes[33], bytes[34]);
+                state.spiralWrapColor = rgbToHex(bytes[35], bytes[36], bytes[37]);
+                state.servingColor = rgbToHex(bytes[38], bytes[39], bytes[40]);
+
+                // Cresting Bands
+                if (bytes.length > 41) {
+                    const bandCount = bytes[41];
+                    state.crestingBands = [];
+                    let ptr = 42;
+                    for (let i = 0; i < bandCount && ptr + 5 <= bytes.length; i++) {
+                        const color = rgbToHex(bytes[ptr], bytes[ptr + 1], bytes[ptr + 2]);
+                        const width = parseFloat((bytes[ptr + 3] / 100).toFixed(2));
+                        const offset = parseFloat((bytes[ptr + 4] / 100).toFixed(2));
+                        state.crestingBands.push({ id: 'cr_' + i, color, width, offset });
+                        ptr += 5;
+                    }
+                } else {
+                    state.crestingBands = [];
+                }
+
+                return true;
+            }
+
+            // 2. Backward Compatibility for Delimited Text (#a=...)
+            if (clean.startsWith('a=')) {
+                clean = clean.substring(2);
+                const parts = clean.split('~');
+                const core = parts[0].split('_');
+
+                if (core.length >= 24) {
+                    state.featherShape = shapeList[parseInt(core[0])] || 'shield';
+                    state.woodType = woodList[parseInt(core[1])] || 'cedar';
+                    state.pointType = pointList[parseInt(core[2])] || 'field';
+                    state.nockType = nockList[parseInt(core[3])] || 'plastic';
+                    state.stageBg = bgList[parseInt(core[4])] || 'paper';
+
+                    const flags = parseInt(core[5]) || 0;
+                    state.enableShaftStain = (flags & (1 << 0)) !== 0;
+                    state.useSingleShaftColor = (flags & (1 << 1)) !== 0;
+                    state.enableCrownDip = (flags & (1 << 2)) !== 0;
+                    state.enableSpiralWrap = (flags & (1 << 3)) !== 0;
+                    state.showFrontServing = (flags & (1 << 4)) !== 0;
+                    state.showBackServing = (flags & (1 << 5)) !== 0;
+                    state.showCresting = (flags & (1 << 6)) !== 0;
+
+                    state.featherLength = parseFloat(core[6]) || 4.0;
+                    state.featherHeight = parseInt(core[7]) || 100;
+                    state.feather1Color = '#' + core[8];
+                    state.feather2Color = '#' + core[9];
+                    state.feather3Color = '#' + core[10];
+                    state.shaftDiameter = parseFloat(core[11]) || 8.0;
+                    state.shaftBackColor = '#' + core[12];
+                    state.shaftFrontColor = '#' + core[13];
+                    state.crownLength = parseFloat(core[14]) || 5.5;
+                    state.crownDipColor = '#' + core[15];
+                    state.pointWeight = parseInt(core[16]) || 100;
+                    state.pointColor = '#' + core[17];
+                    state.nockColor = '#' + core[18];
+                    state.spiralWrapColor = '#' + core[19];
+                    state.servingColor = '#' + core[20];
+                    state.crestingStartOffset = parseFloat(core[21]) || 0.30;
+                    state.arrowLength = parseFloat(core[22]) || 30.0;
+                    state.drawWeight = parseInt(core[23]) || 45;
+
+                    return true;
+                }
+            }
+
+            // 3. Backward Compatibility for Legacy Base64 builds (build=...)
+            if (clean.startsWith('build=')) {
+                clean = clean.substring(6);
+                const jsonStr = decodeURIComponent(atob(clean));
+                const data = JSON.parse(jsonStr);
+                if (data.fS) state.featherShape = data.fS;
+                if (data.fL !== undefined) state.featherLength = parseFloat(data.fL);
+                if (data.fH !== undefined) state.featherHeight = parseInt(data.fH);
+                if (data.f1) state.feather1Color = data.f1;
+                if (data.f2) state.feather2Color = data.f2;
+                if (data.f3) state.feather3Color = data.f3;
+                if (data.wT) state.woodType = data.wT;
+                if (data.sD !== undefined) state.shaftDiameter = parseFloat(data.sD);
+                if (data.aL !== undefined) state.arrowLength = parseFloat(data.aL);
+                return true;
+            }
+
+            return false;
+        } catch (e) {
+            console.warn('Could not deserialize URL hash:', e);
+            return false;
+        }
+    }
+
+    function updateUrlHash() {
+        try {
+            const hash = serializeStateToHash();
+            if (!hash) return;
+            if (window.location.protocol === 'file:') {
+                window.location.hash = hash;
+            } else {
+                history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${hash}`);
+            }
+        } catch (e) {
+            try {
+                window.location.hash = serializeStateToHash();
+            } catch (err) {}
+        }
+    }
+
+    // Floating Non-blocking Toast Notification Helper
+    let toastTimer = null;
+    function showToast(msg = '🔗 Share link copied to clipboard!') {
+        const toast = document.getElementById('toastNotification');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.classList.add('show');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2400);
+    }
+
+    function copyShareLink() {
+        updateUrlHash();
+        const shareUrl = window.location.href;
+
+        // Visual button feedback without blocking dialogs
+        if (elements.headerShareBtn) {
+            const originalHTML = elements.headerShareBtn.innerHTML;
+            elements.headerShareBtn.innerHTML = '✅ Copied!';
+            setTimeout(() => {
+                if (elements.headerShareBtn) elements.headerShareBtn.innerHTML = originalHTML;
+            }, 2000);
+        }
+        if (elements.copyShareLinkBtn) {
+            const originalHTML = elements.copyShareLinkBtn.innerHTML;
+            elements.copyShareLinkBtn.innerHTML = '✅ Copied to Clipboard!';
+            setTimeout(() => {
+                if (elements.copyShareLinkBtn) elements.copyShareLinkBtn.innerHTML = originalHTML;
+            }, 2000);
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast('🔗 Link copied to clipboard!');
+            }).catch(() => {
+                promptCopyFallback(shareUrl);
+            });
+        } else {
+            promptCopyFallback(shareUrl);
+        }
+    }
+
+    function promptCopyFallback(text) {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = text;
+        tempInput.style.position = 'fixed';
+        tempInput.style.left = '-9999px';
+        tempInput.style.top = '-9999px';
+        document.body.appendChild(tempInput);
+        tempInput.focus();
+        tempInput.select();
+        let success = false;
+        try {
+            success = document.execCommand('copy');
+        } catch (e) {}
+        document.body.removeChild(tempInput);
+
+        if (success) {
+            showToast('🔗 Link copied to clipboard!');
+        } else {
+            prompt('Copy this link to share your arrow build:', text);
+        }
     }
 
     // Ghost Sad Face 5-Second Timer & Fadeout Controller (Activated ONLY on clicking Carbon Fiber)
@@ -1411,7 +1760,8 @@
         elements.smartRandomBtn.addEventListener('click', generateSmartRandom);
 
         // Export Menu Toggle & Actions
-        elements.exportBtn.addEventListener('click', () => {
+        elements.exportBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             elements.exportMenu.classList.toggle('show');
         });
         document.addEventListener('click', (e) => {
@@ -1420,6 +1770,8 @@
             }
         });
 
+        if (elements.headerShareBtn) elements.headerShareBtn.addEventListener('click', copyShareLink);
+        if (elements.copyShareLinkBtn) elements.copyShareLinkBtn.addEventListener('click', copyShareLink);
         elements.exportPngBtn.addEventListener('click', exportPNG);
         elements.exportSvgBtn.addEventListener('click', exportSVG);
         elements.copySpecsBtn.addEventListener('click', copySpecsSummary);
@@ -1658,6 +2010,7 @@
         else historyIndex++;
 
         updateUndoRedoButtons();
+        updateUrlHash();
     }
 
     function undo() {

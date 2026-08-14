@@ -44,9 +44,11 @@
                 <button id="undoBtn" class="btn-icon" title="Undo (Ctrl+Z)" disabled>↶</button>
                 <button id="redoBtn" class="btn-icon" title="Redo (Ctrl+Y)" disabled>↷</button>
                 <button id="smartRandomBtn" class="btn-action btn-smart">✨ Smart Random</button>
+                <button id="headerShareBtn" class="btn-action" title="Copy shareable link to clipboard">🔗 Share</button>
                 <div class="export-dropdown-wrapper">
                     <button id="exportBtn" class="btn-primary">💾 Export ▼</button>
                     <div class="export-menu" id="exportMenu">
+                        <button id="copyShareLinkBtn">🔗 Copy Shareable Link</button>
                         <button id="exportPngBtn">🖼️ Download PNG (HD)</button>
                         <button id="exportSvgBtn">📐 Download SVG</button>
                         <button id="copySpecsBtn">📋 Copy Specifications</button>
@@ -581,6 +583,9 @@
             </div>
         </footer>
     </div>
+
+    <!-- Floating Non-blocking Toast Notification -->
+    <div id="toastNotification" class="toast-notification">🔗 Link copied to clipboard!</div>
 
     <!-- Script file -->
     <script src="script.js"></script>
