@@ -1152,6 +1152,42 @@ input[type="color"]::-webkit-color-swatch {
         flex-wrap: wrap;
     }
 
+    .stage-toolbar {
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: space-between;
+    }
+
+    .toolbar-label {
+        display: none;
+    }
+
+    .bg-selector {
+        gap: 4px;
+    }
+
+    .bg-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.95rem;
+    }
+
+    .zoom-controls {
+        gap: 3px;
+        padding: 2px 6px;
+    }
+
+    .zoom-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 0.85rem;
+    }
+
+    #zoomLevelText {
+        font-size: 0.75rem;
+        padding: 0 2px;
+    }
+
     .tabs-nav {
         overflow-x: auto;
         white-space: nowrap;

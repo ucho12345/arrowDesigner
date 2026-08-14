@@ -661,22 +661,6 @@
             elements.nockGroup.appendChild(hornBody);
             elements.nockGroup.appendChild(hornHighlight);
             elements.nockGroup.appendChild(slot);
-        } else if (state.nockType === 'metal') {
-            const metalNock = createSVGElement('path', {
-                d: `M ${x + 5} 114 L ${x + 15} 112 L ${shaftStartX} 115 L ${shaftStartX} 125 L ${x + 15} 128 L ${x + 5} 126 Z`,
-                fill: nockColor, stroke: 'rgba(0,0,0,0.3)', 'stroke-width': '0.8'
-            });
-            const metalHighlight = createSVGElement('path', {
-                d: `M ${x + 5} 114 L ${x + 15} 112 L ${shaftStartX} 115 L ${shaftStartX} 125 L ${x + 15} 128 L ${x + 5} 126 Z`,
-                fill: 'url(#nockHighlight)'
-            });
-            const slot = createSVGElement('path', {
-                d: `M ${x + 3} 118 L ${x + 16} 118 L ${x + 16} 122 L ${x + 3} 122 Z`,
-                fill: 'rgba(0,0,0,0.5)'
-            });
-            elements.nockGroup.appendChild(metalNock);
-            elements.nockGroup.appendChild(metalHighlight);
-            elements.nockGroup.appendChild(slot);
         } else {
             const plasticNock = createSVGElement('path', {
                 d: `M ${x + 5} 114 L ${x + 15} 112 L ${shaftStartX} 115 L ${shaftStartX} 125 L ${x + 15} 128 L ${x + 5} 126 Z`,
@@ -1297,7 +1281,7 @@
         const shapes = ['shield', 'banana', 'parabolic', 'batman', 'traditional'];
         const woods = ['cedar', 'spruce', 'pine', 'bamboo', 'douglas', 'carbon'];
         const points = ['field', 'bullet', 'broadhead2', 'broadhead3', 'bodkin', 'blunt'];
-        const nocks = ['plastic', 'selfnock', 'horn', 'metal'];
+        const nocks = ['plastic', 'selfnock', 'horn'];
 
         const pal = palettes[Math.floor(Math.random() * palettes.length)];
         state.featherShape = shapes[Math.floor(Math.random() * shapes.length)];
