@@ -93,7 +93,7 @@
         },
         legolas: {
             name: "🧝 Elven Arrow",
-            featherShape: "parabolic",
+            featherShape: "legolas-style",
             feather1Color: "#F8FAFC", feather2Color: "#15803D", feather3Color: "#15803D",
             featherLength: 4.5,
             woodType: "spruce", enableShaftStain: false,
@@ -590,6 +590,9 @@
                     fluD += ` L ${px1} ${baseY} L ${pxMid} ${sY} L ${px2} ${baseY}`;
                 }
                 return fluD + ` Z`;
+
+            case 'legolas-style':
+                return `M ${x + (len * 0.12)} ${baseY} L ${x} ${topY} Q ${x + (len * 0.4)} ${topY * 1.02}, ${x + (len * 0.7)} ${baseY + (dir * h * 0.45)} Q ${x + (len * 0.9)} ${baseY + (dir * h * 0.15)}, ${x + len} ${baseY} L ${x + (len * 0.12)} ${baseY} Z`;
 
             case 'shield':
             default:
