@@ -134,6 +134,7 @@
         svg: document.getElementById('arrowSvg'),
         arrowViewport: document.getElementById('arrowViewport'),
         arrowGroup: document.getElementById('arrowGroup'),
+        carbonSadFaceGroup: document.getElementById('carbonSadFaceGroup'),
         nockGroup: document.getElementById('nockGroup'),
         crownDipGroup: document.getElementById('crownDipGroup'),
         shaftGroup: document.getElementById('shaftGroup'),
@@ -243,6 +244,49 @@
         saveStateToHistory(true);
         updateUIFromState();
         renderArrow();
+    }
+
+    // Ghost Sad Face 5-Second Timer & Fadeout Controller (Activated ONLY on clicking Carbon Fiber)
+    let carbonGhostTimeout = null;
+    let carbonFadeTimeout = null;
+
+    function triggerCarbonGhost5s() {
+        if (!elements.carbonSadFaceGroup) return;
+
+        // Clear any existing timeouts
+        if (carbonGhostTimeout) clearTimeout(carbonGhostTimeout);
+        if (carbonFadeTimeout) clearTimeout(carbonFadeTimeout);
+
+        elements.carbonSadFaceGroup.style.display = 'block';
+        elements.carbonSadFaceGroup.style.opacity = '0';
+
+        // Fade in to 0.5 opacity
+        requestAnimationFrame(() => {
+            if (elements.carbonSadFaceGroup) {
+                elements.carbonSadFaceGroup.style.opacity = '0.5';
+            }
+        });
+
+        // Disappear automatically after 5 seconds with smooth fade
+        carbonGhostTimeout = setTimeout(() => {
+            if (elements.carbonSadFaceGroup) {
+                elements.carbonSadFaceGroup.style.opacity = '0';
+                carbonFadeTimeout = setTimeout(() => {
+                    if (elements.carbonSadFaceGroup && elements.carbonSadFaceGroup.style.opacity === '0') {
+                        elements.carbonSadFaceGroup.style.display = 'none';
+                    }
+                }, 800);
+            }
+        }, 5000);
+    }
+
+    function hideCarbonGhost() {
+        if (carbonGhostTimeout) clearTimeout(carbonGhostTimeout);
+        if (carbonFadeTimeout) clearTimeout(carbonFadeTimeout);
+        if (elements.carbonSadFaceGroup) {
+            elements.carbonSadFaceGroup.style.opacity = '0';
+            elements.carbonSadFaceGroup.style.display = 'none';
+        }
     }
 
     // ----------------------------------------------------------------------
@@ -1137,7 +1181,7 @@
             pine: 'Traditional Pine',
             bamboo: 'Asian Bamboo',
             douglas: 'Douglas Fir',
-            carbon: 'Carbon Fiber ⚡'
+            carbon: 'Carbon Fiber'
         };
 
         elements.infoStyleTag.textContent = state.featherShape.toUpperCase();
@@ -1266,7 +1310,24 @@
 
         // Shape Radio Cards
         bindRadioGroup('featherShape', (val) => { state.featherShape = val; triggerUpdate(true); });
-        bindRadioGroup('woodType', (val) => { state.woodType = val; triggerUpdate(true); });
+        bindRadioGroup('woodType', (val) => { 
+            state.woodType = val; 
+            if (val === 'carbon') {
+                triggerCarbonGhost5s();
+            } else {
+                hideCarbonGhost();
+            }
+            triggerUpdate(true); 
+        });
+
+        // Click directly on Carbon Fiber label to activate/restart 5s ghost
+        const carbonRadio = document.querySelector('input[name="woodType"][value="carbon"]');
+        if (carbonRadio) {
+            carbonRadio.closest('label').addEventListener('click', () => {
+                triggerCarbonGhost5s();
+            });
+        }
+
         bindRadioGroup('pointType', (val) => { state.pointType = val; triggerUpdate(true); });
         bindRadioGroup('nockType', (val) => { state.nockType = val; triggerUpdate(true); });
 

@@ -448,9 +448,13 @@ body {
 
 #arrowSvg {
     width: 100%;
-    max-height: 260px;
-    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
-    transition: transform 0.05s ease-out;
+    height: auto;
+    max-height: 280px;
+    filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.25));
+}
+
+#carbonSadFaceGroup {
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Spec Info Tags under Canvas */

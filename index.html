@@ -123,6 +123,23 @@
                         </defs>
 
                         <!-- SVG Groups dynamically rendered via script.js -->
+                        <g id="carbonSadFaceGroup" opacity="0.5" pointer-events="none" style="display: none;">
+                            <!-- Large Ghost Sad Face Contour in Background -->
+                            <circle cx="475" cy="120" r="95" fill="none" stroke="rgba(148, 163, 184, 0.45)" stroke-width="4" stroke-dasharray="8,5"/>
+                            <!-- Sad Slanted Eyebrows -->
+                            <path d="M 418 80 Q 435 68, 452 82" fill="none" stroke="rgba(148, 163, 184, 0.5)" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M 498 82 Q 515 68, 532 80" fill="none" stroke="rgba(148, 163, 184, 0.5)" stroke-width="3.5" stroke-linecap="round"/>
+                            <!-- Sad Eyes -->
+                            <ellipse cx="435" cy="95" rx="9" ry="14" fill="none" stroke="rgba(148, 163, 184, 0.5)" stroke-width="4"/>
+                            <circle cx="435" cy="100" r="5" fill="rgba(148, 163, 184, 0.45)"/>
+                            <ellipse cx="515" cy="95" rx="9" ry="14" fill="none" stroke="rgba(148, 163, 184, 0.5)" stroke-width="4"/>
+                            <circle cx="515" cy="100" r="5" fill="rgba(148, 163, 184, 0.45)"/>
+                            <!-- Tear drop -->
+                            <path d="M 435 116 C 427 129, 427 139, 435 143 C 443 139, 443 129, 435 116 Z" fill="rgba(148, 163, 184, 0.35)" stroke="rgba(148, 163, 184, 0.5)" stroke-width="1.5"/>
+                            <!-- Big Downturned Frown Mouth -->
+                            <path d="M 415 170 C 445 130, 505 130, 535 170" fill="none" stroke="rgba(148, 163, 184, 0.55)" stroke-width="5" stroke-linecap="round"/>
+                        </g>
+
                         <g id="arrowGroup" transform="translate(0, 0) scale(1)">
                             <g id="nockGroup"></g>
                             <g id="shaftGroup"></g>
@@ -328,7 +345,7 @@
                                 <label class="wood-card">
                                     <input type="radio" name="woodType" value="carbon">
                                     <div class="wood-swatch wood-carbon"></div>
-                                    <span>Carbon Fiber ⚡</span>
+                                    <span>Carbon Fiber</span>
                                 </label>
                             </div>
                         </div>
@@ -388,7 +405,7 @@
                         </div>
                     </div>
 
-                    <!-- TAB 3: HARDWARE (GROT I NOCK) -->
+                    <!-- TAB 3: HARDWARE (POINTS & NOCKS) -->
                     <div class="tab-pane" id="tab-hardware">
                         <div class="panel-section">
                             <h3>Arrowhead & Point Type</h3>
