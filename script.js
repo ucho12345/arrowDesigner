@@ -30,6 +30,8 @@
         showFrontServing: true,
         showBackServing: true,
         servingColor: '#1E293B',
+        enableSpiralWrap: false,      // Spiral Thread Binding around feathers
+        spiralWrapColor: '#FEF08A',   // Spiral thread color
 
         // Shaft & Wood / Materials (STAIN OFF BY DEFAULT)
         woodType: 'cedar',            // cedar, spruce, pine, bamboo, douglas, carbon
@@ -175,6 +177,9 @@
         showFrontServing: document.getElementById('showFrontServing'),
         showBackServing: document.getElementById('showBackServing'),
         servingColor: document.getElementById('servingColor'), servingHex: document.getElementById('servingHex'),
+        enableSpiralWrap: document.getElementById('enableSpiralWrap'),
+        spiralWrapControls: document.getElementById('spiralWrapControls'),
+        spiralWrapColor: document.getElementById('spiralWrapColor'), spiralWrapHex: document.getElementById('spiralWrapHex'),
 
         // Shaft Controls
         shaftDiameter: document.getElementById('shaftDiameter'), shaftDiameterVal: document.getElementById('shaftDiameterVal'),
@@ -282,7 +287,7 @@
         const featherPxLen = 140 * scaleLen;
         const featherPxHeight = (28.8 * (parseInt(state.featherHeight) / 100));
 
-        renderFletchings(featherStartX, centerY, featherPxLen, featherPxHeight);
+        renderFletchings(featherStartX, centerY, featherPxLen, featherPxHeight, shaftH);
 
         // 4. RENDER SERVINGS & DYNAMIC CRESTING POSITION
         let frontServingEndX = featherStartX + featherPxLen - 4 + 14;
@@ -304,10 +309,10 @@
         }
 
         // 6. RENDER NOCK
-        renderNock(nockStartX, centerY, shaftStartX);
+        renderNock(nockStartX, centerY, shaftStartX, shaftH);
 
         // 7. RENDER ARROWHEAD (POINT)
-        renderPoint(shaftEndX, centerY);
+        renderPoint(shaftEndX, centerY, shaftH);
 
         // Update Physics calculations and tags
         updatePhysicsAndSpecs();
@@ -453,55 +458,58 @@
     }
 
     // Fletchings (Feathers) Render with Dense Vector Barb & Down Lines
-    function renderFletchings(startX, centerY, len, h) {
-        // Cock Feather (Top - F1)
-        const pathF1 = getFeatherPath(startX, centerY - 5, len, h, 'top', state.featherShape);
+    function renderFletchings(startX, centerY, len, h, shaftH = 8.0) {
+        const topOffset = shaftH / 2;
+        const topBaseY = centerY - topOffset;
+        const botBaseY = centerY + topOffset;
+
+        // Feather 1 (Top - F1)
+        const pathF1 = getFeatherPath(startX, topBaseY, len, h, 'top', state.featherShape);
         const f1 = createSVGElement('path', {
             d: pathF1, fill: state.feather1Color,
             stroke: 'rgba(0,0,0,0.25)', 'stroke-width': '0.8'
         });
         elements.fletchingGroup.appendChild(f1);
-        renderFeatherBarbs(startX, centerY - 5, len, h, 'top', state.feather1Color);
+        renderFeatherBarbs(startX, topBaseY, len, h, 'top', state.feather1Color);
 
-        // Hen Feather (Bottom - F2)
-        const pathF2 = getFeatherPath(startX, centerY + 5, len, h, 'bottom', state.featherShape);
+        // Feather 2 (Bottom - F2)
+        const pathF2 = getFeatherPath(startX, botBaseY, len, h, 'bottom', state.featherShape);
         const f2 = createSVGElement('path', {
             d: pathF2, fill: state.feather2Color,
             stroke: 'rgba(0,0,0,0.25)', 'stroke-width': '0.8'
         });
         elements.fletchingGroup.appendChild(f2);
-        renderFeatherBarbs(startX, centerY + 5, len, h, 'bottom', state.feather2Color);
+        renderFeatherBarbs(startX, botBaseY, len, h, 'bottom', state.feather2Color);
 
-        // Side Hen Feather (Middle perspective - F3)
-        const pathF3 = getFeatherPath(startX, centerY, len, h * 0.45, 'middle', state.featherShape);
-        const f3 = createSVGElement('path', {
-            d: pathF3, fill: state.feather3Color, opacity: '0.8',
-            stroke: 'rgba(0,0,0,0.25)', 'stroke-width': '0.6'
+        // Feather 3 (Middle perspective - F3) - Solid 3D Cut Profile
+        const pathF3 = getFeatherPath(startX, centerY, len, h * 0.65, 'middle', state.featherShape);
+        const f3Shadow = createSVGElement('path', {
+            d: pathF3, fill: 'rgba(15, 23, 42, 0.25)', transform: 'translate(0, 1.5)'
         });
+        const f3 = createSVGElement('path', {
+            d: pathF3, fill: state.feather3Color,
+            stroke: 'rgba(0,0,0,0.35)', 'stroke-width': '0.8'
+        });
+        elements.fletchingGroup.appendChild(f3Shadow);
         elements.fletchingGroup.appendChild(f3);
+        renderFeatherBarbs(startX, centerY, len, h * 0.65, 'middle', state.feather3Color);
 
-
-
-        if (state.featherShape === 'flu-flu') {
-            renderFeatherBarbs(startX, centerY, len, h * 0.5, 'middle', state.feather3Color);
-        }
-
-        // Quill / Rachis Spine Lines
+        // Quill / Rachis Spine Lines (Flush attached to shaft surface)
         const quillTop = createSVGElement('line', {
-            x1: startX, y1: centerY - 5, x2: startX + len, y2: centerY - 5,
+            x1: startX, y1: topBaseY, x2: startX + len, y2: topBaseY,
             stroke: 'rgba(0,0,0,0.4)', 'stroke-width': '1.4'
         });
         const quillTopShine = createSVGElement('line', {
-            x1: startX, y1: centerY - 5, x2: startX + len, y2: centerY - 5,
+            x1: startX, y1: topBaseY, x2: startX + len, y2: topBaseY,
             stroke: 'rgba(255,255,255,0.4)', 'stroke-width': '0.7'
         });
 
         const quillBot = createSVGElement('line', {
-            x1: startX, y1: centerY + 5, x2: startX + len, y2: centerY + 5,
+            x1: startX, y1: botBaseY, x2: startX + len, y2: botBaseY,
             stroke: 'rgba(0,0,0,0.4)', 'stroke-width': '1.4'
         });
         const quillBotShine = createSVGElement('line', {
-            x1: startX, y1: centerY + 5, x2: startX + len, y2: centerY + 5,
+            x1: startX, y1: botBaseY, x2: startX + len, y2: botBaseY,
             stroke: 'rgba(255,255,255,0.4)', 'stroke-width': '0.7'
         });
 
@@ -509,11 +517,51 @@
         elements.fletchingGroup.appendChild(quillTopShine);
         elements.fletchingGroup.appendChild(quillBot);
         elements.fletchingGroup.appendChild(quillBotShine);
+
+        // Render Spiral Thread Binding Wrap tightly across shaft
+        renderSpiralWrap(startX, centerY, len, shaftH);
+    }
+
+    // Spiral Thread Binding around Shaft Surface Engine
+    function renderSpiralWrap(startX, centerY, len, shaftH = 8.0) {
+        if (!state.enableSpiralWrap) return;
+
+        const tColor = state.spiralWrapColor || '#FEF08A';
+        const pitch = 18; // Distance in PX between spiral loops
+        const numTurns = Math.floor(len / pitch);
+        const threadH = (shaftH / 2) + 1.6; // Wraps tightly around the shaft surface!
+
+        for (let i = 0; i <= numTurns; i++) {
+            const x1 = startX + (i * pitch);
+            const x2 = x1 + (pitch * 0.75);
+
+            if (x1 > startX + len) break;
+
+            // Spiral thread arc wrapping tightly diagonally around shaft surface
+            const threadShadow = createSVGElement('path', {
+                d: `M ${x1} ${centerY - threadH} Q ${x1 + (pitch * 0.35)} ${centerY}, ${x2} ${centerY + threadH}`,
+                fill: 'none', stroke: 'rgba(15, 23, 42, 0.4)', 'stroke-width': '1.6'
+            });
+
+            const threadPath = createSVGElement('path', {
+                d: `M ${x1} ${centerY - threadH} Q ${x1 + (pitch * 0.35)} ${centerY}, ${x2} ${centerY + threadH}`,
+                fill: 'none', stroke: tColor, 'stroke-width': '1.2', 'stroke-linecap': 'round'
+            });
+
+            const threadHighlight = createSVGElement('path', {
+                d: `M ${x1} ${centerY - threadH} Q ${x1 + (pitch * 0.35)} ${centerY}, ${x2} ${centerY + threadH}`,
+                fill: 'none', stroke: 'rgba(255,255,255,0.4)', 'stroke-width': '0.5'
+            });
+
+            elements.fletchingGroup.appendChild(threadShadow);
+            elements.fletchingGroup.appendChild(threadPath);
+            elements.fletchingGroup.appendChild(threadHighlight);
+        }
     }
 
     // Vector Feather Barb Lines
     function renderFeatherBarbs(x, baseY, len, h, side, fColor) {
-        const dir = side === 'top' ? -1 : (side === 'bottom' ? 1 : 0);
+        const dir = side === 'top' ? -1 : (side === 'bottom' ? 1 : 0.55);
         const isFluFlu = state.featherShape === 'flu-flu';
         const numBarbs = isFluFlu ? 48 : 6;
 
@@ -553,9 +601,7 @@
 
     // Smooth Feather Path Generator
     function getFeatherPath(x, baseY, len, h, side, shape) {
-        const dir = side === 'top' ? -1 : (side === 'bottom' ? 1 : 0);
-        const topY = baseY + (dir * h);
-
+        let dir = side === 'top' ? -1 : (side === 'bottom' ? 1 : 0.55);
         if (side === 'middle') {
             if (shape === 'flu-flu') {
                 let fluMidD = `M ${x} ${baseY}`;
@@ -566,13 +612,13 @@
                     const pxMid = px1 + (spikeW * 0.5);
                     const px2 = px1 + spikeW;
                     const hMult = 0.7 + ((i % 4) * 0.08);
-                    const sY = baseY - (h * hMult * 0.6);
+                    const sY = baseY + (0.55 * h * hMult);
                     fluMidD += ` L ${px1} ${baseY} L ${pxMid} ${sY} L ${px2} ${baseY}`;
                 }
                 return fluMidD + ` Z`;
             }
-            return `M ${x} ${baseY} Q ${x + (len * 0.2)} ${baseY - h}, ${x + (len * 0.5)} ${baseY - h} Q ${x + (len * 0.85)} ${baseY - h}, ${x + len} ${baseY} Q ${x + (len * 0.5)} ${baseY + h}, ${x} ${baseY} Z`;
         }
+        const topY = baseY + (dir * h);
 
         switch (shape) {
             case 'banana':
@@ -610,37 +656,40 @@
         }
     }
 
-    // 100% Transparent Self-Nock Renderer
-    function renderNock(x, centerY, shaftStartX) {
+    // Dynamic Nock Renderer (Scales with Shaft Diameter)
+    function renderNock(x, centerY, shaftStartX, shaftH = 8.0) {
         const nockColor = state.nockColor;
         const woodShaftColor = state.enableShaftStain ? state.shaftBackColor : (naturalMaterialMap[state.woodType] || '#D97706');
+        const halfH = shaftH / 2;
+        const topY = centerY - halfH;
+        const botY = centerY + halfH;
 
         if (state.nockType === 'selfnock') {
             const topProng = createSVGElement('path', {
-                d: `M ${x + 6} 115 L ${shaftStartX} 115 L ${shaftStartX} 118.5 L ${x + 16} 118.5 Q ${x + 2} 118.5, ${x + 6} 115 Z`,
+                d: `M ${x + 6} ${topY} L ${shaftStartX} ${topY} L ${shaftStartX} ${centerY - 1.5} L ${x + 16} ${centerY - 1.5} Q ${x + 2} ${centerY - 1.5}, ${x + 6} ${topY} Z`,
                 fill: woodShaftColor, stroke: 'rgba(0,0,0,0.25)', 'stroke-width': '0.7'
             });
             const topProngShine = createSVGElement('path', {
-                d: `M ${x + 6} 115 L ${shaftStartX} 115 L ${shaftStartX} 118.5 L ${x + 16} 118.5 Q ${x + 2} 118.5, ${x + 6} 115 Z`,
+                d: `M ${x + 6} ${topY} L ${shaftStartX} ${topY} L ${shaftStartX} ${centerY - 1.5} L ${x + 16} ${centerY - 1.5} Q ${x + 2} ${centerY - 1.5}, ${x + 6} ${topY} Z`,
                 fill: 'url(#shaftHighlight)'
             });
 
             const botProng = createSVGElement('path', {
-                d: `M ${x + 6} 125 L ${shaftStartX} 125 L ${shaftStartX} 121.5 L ${x + 16} 121.5 Q ${x + 2} 121.5, ${x + 6} 125 Z`,
+                d: `M ${x + 6} ${botY} L ${shaftStartX} ${botY} L ${shaftStartX} ${centerY + 1.5} L ${x + 16} ${centerY + 1.5} Q ${x + 2} ${centerY + 1.5}, ${x + 6} ${botY} Z`,
                 fill: woodShaftColor, stroke: 'rgba(0,0,0,0.25)', 'stroke-width': '0.7'
             });
             const botProngShine = createSVGElement('path', {
-                d: `M ${x + 6} 125 L ${shaftStartX} 125 L ${shaftStartX} 121.5 L ${x + 16} 121.5 Q ${x + 2} 121.5, ${x + 6} 125 Z`,
+                d: `M ${x + 6} ${botY} L ${shaftStartX} ${botY} L ${shaftStartX} ${centerY + 1.5} L ${x + 16} ${centerY + 1.5} Q ${x + 2} ${centerY + 1.5}, ${x + 6} ${botY} Z`,
                 fill: 'url(#shaftHighlight)'
             });
 
             const slotRim = createSVGElement('path', {
-                d: `M ${x - 2} 118.5 L ${x + 16} 118.5 Q ${x + 20} 120, ${x + 16} 121.5 L ${x - 2} 121.5`,
+                d: `M ${x - 2} ${centerY - 1.5} L ${x + 16} ${centerY - 1.5} Q ${x + 20} ${centerY}, ${x + 16} ${centerY + 1.5} L ${x - 2} ${centerY + 1.5}`,
                 fill: 'none', stroke: 'rgba(0,0,0,0.4)', 'stroke-width': '0.8'
             });
 
             const threadWrap = createSVGElement('rect', {
-                x: x + 20, y: 114, width: 12, height: 12, rx: 1,
+                x: x + 20, y: topY - 1, width: 12, height: shaftH + 2, rx: 1,
                 fill: nockColor, stroke: 'rgba(0,0,0,0.4)', 'stroke-width': '0.6'
             });
 
@@ -653,22 +702,22 @@
 
             for (let tx = x + 22; tx < x + 30; tx += 2.5) {
                 const tline = createSVGElement('line', {
-                    x1: tx, y1: 114, x2: tx, y2: 126,
+                    x1: tx, y1: topY - 1, x2: tx, y2: botY + 1,
                     stroke: 'rgba(0,0,0,0.3)', 'stroke-width': '0.6'
                 });
                 elements.nockGroup.appendChild(tline);
             }
         } else if (state.nockType === 'horn') {
             const hornBody = createSVGElement('path', {
-                d: `M ${x} 114 L ${x + 12} 112 L ${shaftStartX} 114 L ${shaftStartX} 126 L ${x + 12} 128 L ${x} 126 Z`,
+                d: `M ${x} ${topY - 1} L ${x + 12} ${topY - 2} L ${shaftStartX} ${topY} L ${shaftStartX} ${botY} L ${x + 12} ${botY + 2} L ${x} ${botY + 1} Z`,
                 fill: '#1E293B', stroke: 'rgba(0,0,0,0.4)', 'stroke-width': '0.8'
             });
             const hornHighlight = createSVGElement('path', {
-                d: `M ${x} 114 L ${x + 12} 112 L ${shaftStartX} 114 L ${shaftStartX} 126 L ${x + 12} 128 L ${x} 126 Z`,
+                d: `M ${x} ${topY - 1} L ${x + 12} ${topY - 2} L ${shaftStartX} ${topY} L ${shaftStartX} ${botY} L ${x + 12} ${botY + 2} L ${x} ${botY + 1} Z`,
                 fill: 'url(#nockHighlight)'
             });
             const slot = createSVGElement('path', {
-                d: `M ${x - 2} 118.5 L ${x + 15} 118.5 Q ${x + 18} 120, ${x + 15} 121.5 L ${x - 2} 121.5 Z`,
+                d: `M ${x - 2} ${centerY - 1.5} L ${x + 15} ${centerY - 1.5} Q ${x + 18} ${centerY}, ${x + 15} ${centerY + 1.5} L ${x - 2} ${centerY + 1.5} Z`,
                 fill: 'none', stroke: 'rgba(0,0,0,0.4)', 'stroke-width': '0.8'
             });
             elements.nockGroup.appendChild(hornBody);
@@ -676,20 +725,148 @@
             elements.nockGroup.appendChild(slot);
         } else {
             const plasticNock = createSVGElement('path', {
-                d: `M ${x + 5} 114 L ${x + 15} 112 L ${shaftStartX} 115 L ${shaftStartX} 125 L ${x + 15} 128 L ${x + 5} 126 Z`,
+                d: `M ${x + 5} ${topY - 1} L ${x + 15} ${topY - 2} L ${shaftStartX} ${topY} L ${shaftStartX} ${botY} L ${x + 15} ${botY + 2} L ${x + 5} ${botY + 1} Z`,
                 fill: nockColor, stroke: 'rgba(0,0,0,0.3)', 'stroke-width': '0.8'
             });
             const plasticHighlight = createSVGElement('path', {
-                d: `M ${x + 5} 114 L ${x + 15} 112 L ${shaftStartX} 115 L ${shaftStartX} 125 L ${x + 15} 128 L ${x + 5} 126 Z`,
+                d: `M ${x + 5} ${topY - 1} L ${x + 15} ${topY - 2} L ${shaftStartX} ${topY} L ${shaftStartX} ${botY} L ${x + 15} ${botY + 2} L ${x + 5} ${botY + 1} Z`,
                 fill: 'url(#nockHighlight)'
             });
             const groove = createSVGElement('path', {
-                d: `M ${x + 2} 117 L ${x + 16} 118 L ${x + 16} 122 L ${x + 2} 123 Z`,
+                d: `M ${x + 2} ${centerY - 2} L ${x + 16} ${centerY - 1} L ${x + 16} ${centerY + 1} L ${x + 2} ${centerY + 2} Z`,
                 fill: 'rgba(0,0,0,0.5)'
             });
             elements.nockGroup.appendChild(plasticNock);
             elements.nockGroup.appendChild(plasticHighlight);
             elements.nockGroup.appendChild(groove);
+        }
+    }
+
+    // Dynamic Point Renderer (Scales with Shaft Diameter)
+    function renderPoint(shaftEndX, centerY, shaftH = 8.0) {
+        const pColor = state.pointColor;
+        const halfH = shaftH / 2;
+        const topY = centerY - halfH;
+        const botY = centerY + halfH;
+
+        // Render metal ferrule only for non-blunt points
+        if (state.pointType !== 'blunt') {
+            const ferrule = createSVGElement('rect', {
+                x: shaftEndX - 2, y: topY - 0.5, width: 14, height: shaftH + 1.0, rx: 1,
+                fill: pColor, stroke: 'rgba(0,0,0,0.4)', 'stroke-width': '0.6'
+            });
+            const ferruleShine = createSVGElement('rect', {
+                x: shaftEndX - 2, y: topY - 0.5, width: 14, height: shaftH + 1.0, rx: 1,
+                fill: 'url(#shaftHighlight)'
+            });
+            elements.pointGroup.appendChild(ferrule);
+            elements.pointGroup.appendChild(ferruleShine);
+        }
+
+        const px = shaftEndX + 12;
+
+        switch (state.pointType) {
+            case 'bullet':
+                const bullet = createSVGElement('path', {
+                    d: `M ${px} ${topY - 0.5} C ${px + 16} ${topY - 0.5}, ${px + 26} ${centerY - 3}, ${px + 27} ${centerY} C ${px + 26} ${centerY + 3}, ${px + 16} ${botY + 0.5}, ${px} ${botY + 0.5} Z`,
+                    fill: pColor, stroke: 'rgba(0,0,0,0.4)', 'stroke-width': '0.8'
+                });
+                const bulletShine = createSVGElement('path', {
+                    d: `M ${px} ${topY - 0.5} C ${px + 16} ${topY - 0.5}, ${px + 26} ${centerY - 3}, ${px + 27} ${centerY} Z`,
+                    fill: 'url(#shaftHighlight)'
+                });
+                elements.pointGroup.appendChild(bullet);
+                elements.pointGroup.appendChild(bulletShine);
+                break;
+
+            case 'broadhead2':
+                const blade2 = createSVGElement('path', {
+                    d: `M ${px} ${topY} L ${px + 8} 96 L ${px + 45} ${centerY} L ${px + 8} 144 L ${px} ${botY} Z`,
+                    fill: pColor, stroke: 'rgba(0,0,0,0.5)', 'stroke-width': '1'
+                });
+                const blade2Shine = createSVGElement('path', {
+                    d: `M ${px} ${topY} L ${px + 8} 96 L ${px + 45} ${centerY} Z`,
+                    fill: 'rgba(255,255,255,0.25)'
+                });
+                const spineLine = createSVGElement('line', {
+                    x1: px, y1: centerY, x2: px + 45, y2: centerY,
+                    stroke: 'rgba(0,0,0,0.5)', 'stroke-width': '1.5'
+                });
+                elements.pointGroup.appendChild(blade2);
+                elements.pointGroup.appendChild(blade2Shine);
+                elements.pointGroup.appendChild(spineLine);
+                break;
+
+            case 'broadhead3':
+                const blade3 = createSVGElement('path', {
+                    d: `M ${px} ${topY} L ${px + 12} 100 L ${px + 40} ${centerY} L ${px + 12} 140 L ${px} ${botY} Z`,
+                    fill: pColor, stroke: 'rgba(0,0,0,0.5)', 'stroke-width': '1'
+                });
+                const bladeCutout = createSVGElement('circle', {
+                    cx: px + 16, cy: centerY, r: 4, fill: '#090D16'
+                });
+                elements.pointGroup.appendChild(blade3);
+                elements.pointGroup.appendChild(bladeCutout);
+                break;
+
+            case 'bodkin':
+                const bodkin = createSVGElement('path', {
+                    d: `M ${px} ${topY - 0.5} L ${px + 10} ${topY - 1.5} L ${px + 48} ${centerY} L ${px + 10} ${botY + 1.5} L ${px} ${botY + 0.5} Z`,
+                    fill: pColor, stroke: 'rgba(0,0,0,0.5)', 'stroke-width': '1'
+                });
+                const bodkinFacet = createSVGElement('path', {
+                    d: `M ${px} ${topY - 0.5} L ${px + 10} ${topY - 1.5} L ${px + 48} ${centerY} Z`,
+                    fill: 'rgba(255,255,255,0.3)'
+                });
+                elements.pointGroup.appendChild(bodkin);
+                elements.pointGroup.appendChild(bodkinFacet);
+                break;
+
+            case 'blunt':
+                const cylH = shaftH + 3.6;
+                const cylTop = centerY - (cylH / 2);
+                const capX = shaftEndX - 2;
+                const capLen = 24;
+
+                // Single Clean Cylindrical Rubber/Metal Cap (Nasadka Walcowa)
+                const bluntCylinder = createSVGElement('rect', {
+                    x: capX, y: cylTop, width: capLen, height: cylH, rx: 2.0,
+                    fill: pColor, stroke: 'rgba(0,0,0,0.7)', 'stroke-width': '1'
+                });
+                // Top cylindrical shine beam
+                const bluntShine = createSVGElement('rect', {
+                    x: capX, y: cylTop + 1, width: capLen, height: cylH * 0.38, rx: 1,
+                    fill: 'rgba(255,255,255,0.25)'
+                });
+                // Vertical grip ribs
+                const rib1 = createSVGElement('line', {
+                    x1: capX + 8, y1: cylTop + 1, x2: capX + 8, y2: cylTop + cylH - 1,
+                    stroke: 'rgba(0,0,0,0.25)', 'stroke-width': '1.2'
+                });
+                const rib2 = createSVGElement('line', {
+                    x1: capX + 16, y1: capX + 16 < capX + capLen ? cylTop + 1 : cylTop + 1, x2: capX + 16, y2: cylTop + cylH - 1,
+                    stroke: 'rgba(0,0,0,0.25)', 'stroke-width': '1.2'
+                });
+
+                elements.pointGroup.appendChild(bluntCylinder);
+                elements.pointGroup.appendChild(bluntShine);
+                elements.pointGroup.appendChild(rib1);
+                elements.pointGroup.appendChild(rib2);
+                break;
+
+            case 'field':
+            default:
+                const field = createSVGElement('path', {
+                    d: `M ${px} ${topY - 0.5} L ${px + 20} ${topY + 1} L ${px + 32} ${centerY} L ${px + 20} ${botY - 1} L ${px} ${botY + 0.5} Z`,
+                    fill: pColor, stroke: 'rgba(0,0,0,0.4)', 'stroke-width': '0.8'
+                });
+                const fieldShine = createSVGElement('path', {
+                    d: `M ${px} ${topY - 0.5} L ${px + 20} ${topY + 1} L ${px + 32} ${centerY} Z`,
+                    fill: 'url(#shaftHighlight)'
+                });
+                elements.pointGroup.appendChild(field);
+                elements.pointGroup.appendChild(fieldShine);
+                break;
         }
     }
 
@@ -1130,6 +1307,16 @@
         if (elements.enableBarredFeathers) bindCheckbox(elements.enableBarredFeathers, (v) => state.enableBarredFeathers = v);
         bindCheckbox(elements.showFrontServing, (v) => state.showFrontServing = v);
         bindCheckbox(elements.showBackServing, (v) => state.showBackServing = v);
+        if (elements.enableSpiralWrap) {
+            bindCheckbox(elements.enableSpiralWrap, (v) => {
+                state.enableSpiralWrap = v;
+                elements.spiralWrapControls.style.display = v ? 'block' : 'none';
+                triggerUpdate(true);
+            });
+        }
+        if (elements.spiralWrapColor) {
+            bindColorInput(elements.spiralWrapColor, elements.spiralWrapHex, (v) => state.spiralWrapColor = v);
+        }
 
         bindCheckbox(elements.enableShaftStain, (v) => {
             state.enableShaftStain = v;
@@ -1309,6 +1496,14 @@
 
         elements.showFrontServing.checked = state.showFrontServing;
         elements.showBackServing.checked = state.showBackServing;
+        if (elements.enableSpiralWrap) {
+            elements.enableSpiralWrap.checked = !!state.enableSpiralWrap;
+            elements.spiralWrapControls.style.display = state.enableSpiralWrap ? 'block' : 'none';
+        }
+        if (elements.spiralWrapColor) {
+            elements.spiralWrapColor.value = state.spiralWrapColor || '#FEF08A';
+            elements.spiralWrapHex.textContent = (state.spiralWrapColor || '#FEF08A').toUpperCase();
+        }
 
         elements.enableShaftStain.checked = state.enableShaftStain;
         elements.shaftStainControlsContainer.style.display = state.enableShaftStain ? 'block' : 'none';
@@ -1523,7 +1718,7 @@
 
     function copySpecsSummary() {
         const text = `🏹 ARROW SPECIFICATION:
-• Fletching Shape: ${state.featherShape.toUpperCase()} (${state.featherLength}")
+• Fletching Shape: ${state.featherShape.toUpperCase()} (${state.featherLength}") [Spiral Binding: ${state.enableSpiralWrap ? 'YES' : 'NO'}]
 • Shaft Material: ${state.woodType.toUpperCase()} (Diameter: ${state.shaftDiameter || 8.0}mm) (Stain: ${state.enableShaftStain ? 'YES' : 'NO'})
 • Crown Dip Length: ${state.enableCrownDip ? state.crownLength + '"' : 'NONE'}
 • Cresting Offset: ${state.showCresting ? state.crestingStartOffset + '"' : 'NONE'}
