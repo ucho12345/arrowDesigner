@@ -1,5 +1,8 @@
 /* ==========================================================================
-   ARROW DESIGNER - Interactive Engine & Crisp Vector Renderer
+   Arrow Designer - Custom Arrow Studio
+   Copyright (c) 2026. All rights reserved.
+   Unauthorized copying, modification, or distribution of this code,
+   via any medium, is strictly prohibited.
    ========================================================================== */
 
 (function () {
