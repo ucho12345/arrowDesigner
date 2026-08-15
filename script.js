@@ -545,8 +545,10 @@
     }
 
     function copyShareLink() {
+        const hash = serializeStateToHash();
         updateUrlHash();
-        const shareUrl = window.location.href;
+        const baseUrl = window.location.href.split('#')[0];
+        const shareUrl = `${baseUrl}#${hash}`;
 
         // Visual button feedback without blocking dialogs
         if (elements.headerShareBtn) {
@@ -2326,7 +2328,6 @@
         else historyIndex++;
 
         updateUndoRedoButtons();
-        updateUrlHash();
     }
 
     function undo() {
