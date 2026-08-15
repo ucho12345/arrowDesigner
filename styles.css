@@ -623,7 +623,7 @@ body {
 .shape-shield { clip-path: polygon(0 100%, 15% 0, 75% 0, 100% 100%); }
 .shape-banana { clip-path: polygon(0 100%, 30% 0, 80% 20%, 100% 100%); }
 .shape-parabolic { clip-path: polygon(0 100%, 40% 0, 85% 10%, 100% 100%); }
-.shape-batman { clip-path: polygon(0 100%, 20% 0, 40% 60%, 60% 0, 80% 60%, 100% 100%); }
+.shape-batman { clip-path: polygon(0 100%, 16% 5%, 22% 0, 32% 10%, 62% 44%, 74% 18%, 86% 45%, 100% 100%); }
 .shape-traditional { clip-path: polygon(0 100%, 12% 0, 80% 0, 100% 100%); }
 .shape-legolas-style { clip-path: polygon(15% 100%, 0 0, 45% 0, 80% 45%, 100% 100%); }
 .shape-flu-flu { clip-path: polygon(0 100%, 10% 20%, 25% 100%, 40% 10%, 60% 100%, 75% 20%, 90% 100%); }

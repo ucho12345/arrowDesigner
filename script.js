@@ -87,9 +87,11 @@
         robin: {
             name: "🏹 Robin Hood",
             featherShape: "shield",
+            featherLength: 4.0,
             feather1Color: "#DC2626", feather2Color: "#166534", feather3Color: "#166534",
             woodType: "cedar", enableShaftStain: true, shaftBackColor: "#B45309", shaftFrontColor: "#B45309",
-            enableCrownDip: true, crownDipColor: "#FEF08A", crownLength: 5.0,
+            enableCrownDip: true, crownDipColor: "#FEF08A", crownLength: 7.0,
+            showFrontServing: true, showBackServing: true,
             pointType: "field", pointColor: "#94A3B8", nockType: "selfnock", nockColor: "#78350F",
             showCresting: false,
             servingColor: "#451A03"
@@ -100,7 +102,8 @@
             feather1Color: "#F8FAFC", feather2Color: "#15803D", feather3Color: "#15803D",
             featherLength: 4.5,
             woodType: "spruce", enableShaftStain: false,
-            enableCrownDip: true, crownDipColor: "#F8FAFC", crownLength: 6.5,
+            enableCrownDip: true, crownDipColor: "#F8FAFC", crownLength: 7.8,
+            showFrontServing: true, showBackServing: true,
             pointType: "bullet", pointColor: "#CBD5E1", nockType: "horn", nockColor: "#FEF08A",
             showCresting: true, crestingStartOffset: 0.25,
             crestingBands: [
@@ -149,6 +152,7 @@
         // Header Action Buttons
         undoBtn: document.getElementById('undoBtn'),
         redoBtn: document.getElementById('redoBtn'),
+        randomBtn: document.getElementById('randomBtn'),
         smartRandomBtn: document.getElementById('smartRandomBtn'),
         headerShareBtn: document.getElementById('headerShareBtn'),
         exportBtn: document.getElementById('exportBtn'),
@@ -200,8 +204,6 @@
         // Hardware Controls
         pointColor: document.getElementById('pointColor'), pointHex: document.getElementById('pointHex'),
         nockColor: document.getElementById('nockColor'), nockHex: document.getElementById('nockHex'),
-
-
 
         // Dynamic Cresting Controls
         showCresting: document.getElementById('showCresting'),
@@ -1021,7 +1023,12 @@
                 return `M ${x} ${baseY} Q ${x + (len * 0.12)} ${baseY + (dir * h * 1.04)}, ${x + (len * 0.32)} ${topY} Q ${x + (len * 0.72)} ${baseY + (dir * h * 0.98)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
 
             case 'batman':
-                return `M ${x} ${baseY} Q ${x + (len * 0.08)} ${topY}, ${x + (len * 0.22)} ${topY} Q ${x + (len * 0.38)} ${baseY + (dir * h * 0.35)}, ${x + (len * 0.55)} ${topY} Q ${x + (len * 0.8)} ${baseY + (dir * h * 0.95)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
+                // Exact 1:1 photorealistic organic Batman wave cut from reference photo:
+                // - Graceful concave rear sweep up to the first broad crown peak (~20% len)
+                // - Gentle sloping valley/saddle (~62% len)
+                // - Distinct secondary wave peak (~74% len)
+                // - Elongated, needle-tapered front descent to the quill tip (100% len)
+                return `M ${x} ${baseY} Q ${x + (len * 0.08)} ${baseY + (dir * h * 0.40)}, ${x + (len * 0.16)} ${baseY + (dir * h * 0.95)} Q ${x + (len * 0.22)} ${topY}, ${x + (len * 0.32)} ${baseY + (dir * h * 0.90)} Q ${x + (len * 0.50)} ${baseY + (dir * h * 0.72)}, ${x + (len * 0.62)} ${baseY + (dir * h * 0.56)} Q ${x + (len * 0.68)} ${baseY + (dir * h * 0.60)}, ${x + (len * 0.74)} ${baseY + (dir * h * 0.82)} Q ${x + (len * 0.84)} ${baseY + (dir * h * 0.55)}, ${x + (len * 0.94)} ${baseY + (dir * h * 0.18)} Q ${x + (len * 0.98)} ${baseY + (dir * h * 0.05)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
 
             case 'traditional':
                 return `M ${x} ${baseY} L ${x + (len * 0.12)} ${topY} L ${x + (len * 0.8)} ${topY} Q ${x + (len * 0.92)} ${baseY + (dir * h * 0.4)}, ${x + len} ${baseY} L ${x} ${baseY} Z`;
@@ -1533,10 +1540,35 @@
             carbon: 'Carbon Fiber'
         };
 
-        elements.infoStyleTag.textContent = state.featherShape.toUpperCase();
+        const pointNames = {
+            field: 'Field Point',
+            bullet: 'Bullet Point',
+            broadhead2: 'Broadhead (2-Blade)',
+            broadhead3: 'Broadhead (3-Blade)',
+            bodkin: 'Bodkin Point',
+            blunt: 'Blunt Point'
+        };
+
+        const shapeNames = {
+            shield: 'Shield Cut',
+            banana: 'Banana Cut',
+            parabolic: 'Parabolic Cut',
+            batman: 'Batman Cut',
+            traditional: 'Triangular Cut',
+            'legolas-style': 'Old English',
+            'flu-flu': 'Flu-Flu Spiral'
+        };
+
+        const nockNames = {
+            plastic: 'Bohning Plastic',
+            selfnock: 'Self-Nock Wood',
+            horn: 'Horn Insert'
+        };
+
+        elements.infoStyleTag.textContent = shapeNames[state.featherShape] || state.featherShape.toUpperCase();
         elements.infoWoodTag.textContent = matNames[state.woodType] || state.woodType.toUpperCase();
-        elements.infoPointTag.textContent = `${state.pointType.toUpperCase()} (${pw}gr)`;
-        elements.infoNockTag.textContent = state.nockType.toUpperCase();
+        elements.infoPointTag.textContent = pointNames[state.pointType] || state.pointType.toUpperCase();
+        elements.infoNockTag.textContent = nockNames[state.nockType] || state.nockType.toUpperCase();
     }
 
     // ----------------------------------------------------------------------
@@ -1757,7 +1789,8 @@
         // Header Actions
         elements.undoBtn.addEventListener('click', undo);
         elements.redoBtn.addEventListener('click', redo);
-        elements.smartRandomBtn.addEventListener('click', generateSmartRandom);
+        if (elements.randomBtn) elements.randomBtn.addEventListener('click', generateClassicRandom);
+        if (elements.smartRandomBtn) elements.smartRandomBtn.addEventListener('click', generateSmartRandom);
 
         // Export Menu Toggle & Actions
         elements.exportBtn.addEventListener('click', (e) => {
@@ -1937,58 +1970,341 @@
     // ----------------------------------------------------------------------
     // Smart Randomizer
     // ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // Smart Archetype Randomizer Engine (12 Curated Historical & Visual Aesthetics)
+    // ----------------------------------------------------------------------
+    const archetypes = [
+        {
+            name: "Forest Hunter",
+            woods: ['cedar', 'spruce', 'pine'],
+            shapes: ['shield', 'traditional', 'parabolic'],
+            lengths: [4.0, 4.5, 5.0],
+            points: ['field', 'broadhead2', 'broadhead3'],
+            nocks: ['selfnock', 'horn'],
+            pointColor: '#94A3B8',
+            nockColors: ['#78350F', '#B45309', '#451A03'],
+            servings: ['#451A03', '#166534', '#78350F'],
+            palettes: [
+                { cock: '#C2410C', hen: '#166534', bands: ['#C2410C', '#FEF08A', '#166534'] },
+                { cock: '#D97706', hen: '#78350F', bands: ['#D97706', '#F8FAFC', '#78350F'] },
+                { cock: '#DC2626', hen: '#15803D', bands: ['#DC2626', '#FEF08A', '#15803D'] },
+                { cock: '#F59E0B', hen: '#451A03', bands: ['#F59E0B', '#B45309', '#451A03'] }
+            ]
+        },
+        {
+            name: "Medieval War Arrow",
+            woods: ['douglas', 'cedar', 'pine'],
+            shapes: ['legolas-style', 'shield', 'traditional'],
+            lengths: [4.5, 5.0, 5.5],
+            points: ['bodkin', 'field'],
+            nocks: ['horn', 'selfnock'],
+            pointColor: '#64748B',
+            nockColors: ['#78350F', '#1E293B', '#B45309'],
+            servings: ['#1E293B', '#334155', '#451A03'],
+            palettes: [
+                { cock: '#F8FAFC', hen: '#F8FAFC', bands: ['#991B1B', '#F8FAFC', '#1E293B'] },
+                { cock: '#991B1B', hen: '#475569', bands: ['#991B1B', '#F59E0B', '#475569'] },
+                { cock: '#DC2626', hen: '#1E293B', bands: ['#DC2626', '#CBD5E1', '#1E293B'] },
+                { cock: '#1E3A8A', hen: '#CBD5E1', bands: ['#1E3A8A', '#F59E0B', '#CBD5E1'] }
+            ]
+        },
+        {
+            name: "High Elven Royal",
+            woods: ['spruce', 'bamboo'],
+            shapes: ['legolas-style', 'banana', 'batman'],
+            lengths: [4.0, 4.5, 5.0],
+            points: ['bullet', 'bodkin'],
+            nocks: ['horn', 'plastic'],
+            pointColor: '#CBD5E1',
+            nockColors: ['#FEF08A', '#F8FAFC', '#F59E0B'],
+            servings: ['#F59E0B', '#059669', '#1D4ED8'],
+            palettes: [
+                { cock: '#F8FAFC', hen: '#059669', bands: ['#F59E0B', '#F8FAFC', '#059669'] },
+                { cock: '#FEF08A', hen: '#1D4ED8', bands: ['#FEF08A', '#F8FAFC', '#1D4ED8'] },
+                { cock: '#F8FAFC', hen: '#F8FAFC', bands: ['#F59E0B', '#F8FAFC', '#F59E0B'] },
+                { cock: '#10B981', hen: '#1E293B', bands: ['#10B981', '#FEF08A', '#1E293B'] }
+            ]
+        },
+        {
+            name: "Kyudo & Asian Bamboo",
+            woods: ['bamboo', 'spruce'],
+            shapes: ['traditional', 'parabolic', 'shield'],
+            lengths: [4.0, 4.5],
+            points: ['bullet', 'bodkin'],
+            nocks: ['horn', 'selfnock'],
+            pointColor: '#94A3B8',
+            nockColors: ['#0F172A', '#78350F', '#DC2626'],
+            servings: ['#0F172A', '#991B1B', '#1E293B'],
+            palettes: [
+                { cock: '#DC2626', hen: '#18181B', bands: ['#DC2626', '#F8FAFC', '#18181B'] },
+                { cock: '#FAFAFA', hen: '#18181B', bands: ['#DC2626', '#FAFAFA', '#18181B'] },
+                { cock: '#991B1B', hen: '#991B1B', bands: ['#991B1B', '#F59E0B', '#18181B'] }
+            ]
+        },
+        {
+            name: "Stealth Modern Tactical",
+            woods: ['carbon'],
+            shapes: ['batman', 'shield', 'banana'],
+            lengths: [3.5, 4.0, 4.5],
+            points: ['field', 'bullet', 'broadhead2'],
+            nocks: ['plastic'],
+            pointColor: '#334155',
+            nockColors: ['#DC2626', '#0284C7', '#F59E0B', '#10B981'],
+            servings: ['#0F172A', '#334155'],
+            palettes: [
+                { cock: '#84CC16', hen: '#0F172A', bands: ['#84CC16', '#F8FAFC', '#0F172A'] },
+                { cock: '#EA580C', hen: '#0F172A', bands: ['#EA580C', '#CBD5E1', '#0F172A'] },
+                { cock: '#06B6D4', hen: '#0F172A', bands: ['#06B6D4', '#F8FAFC', '#0F172A'] },
+                { cock: '#E11D48', hen: '#1E293B', bands: ['#E11D48', '#F8FAFC', '#1E293B'] }
+            ]
+        },
+        {
+            name: "Autumn Plains Nomad",
+            woods: ['pine', 'cedar', 'bamboo'],
+            shapes: ['traditional', 'shield'],
+            lengths: [4.0, 4.5, 5.0],
+            points: ['broadhead2', 'field', 'blunt'],
+            nocks: ['selfnock'],
+            pointColor: '#94A3B8',
+            nockColors: ['#78350F', '#B45309'],
+            servings: ['#78350F', '#451A03'],
+            palettes: [
+                { cock: '#D97706', hen: '#65A30D', bands: ['#D97706', '#FEF08A', '#65A30D'] },
+                { cock: '#9A3412', hen: '#D97706', bands: ['#9A3412', '#FEF08A', '#78350F'] },
+                { cock: '#65A30D', hen: '#78350F', bands: ['#65A30D', '#F8FAFC', '#78350F'] }
+            ]
+        },
+        {
+            name: "Viking Norse Raider",
+            woods: ['pine', 'spruce', 'douglas'],
+            shapes: ['traditional', 'shield'],
+            lengths: [4.5, 5.0],
+            points: ['broadhead2', 'bodkin'],
+            nocks: ['selfnock', 'horn'],
+            pointColor: '#64748B',
+            nockColors: ['#451A03', '#78350F', '#1E293B'],
+            servings: ['#1E293B', '#475569', '#334155'],
+            palettes: [
+                { cock: '#18181B', hen: '#64748B', bands: ['#18181B', '#E2E8F0', '#64748B'] },
+                { cock: '#991B1B', hen: '#CBD5E1', bands: ['#991B1B', '#F8FAFC', '#1E293B'] },
+                { cock: '#0284C7', hen: '#1E293B', bands: ['#0284C7', '#F8FAFC', '#1E293B'] }
+            ]
+        },
+        {
+            name: "Steppe Horse Archer",
+            woods: ['bamboo', 'cedar'],
+            shapes: ['banana', 'parabolic'],
+            lengths: [3.5, 4.0],
+            points: ['bodkin', 'blunt', 'field'],
+            nocks: ['horn', 'selfnock'],
+            pointColor: '#94A3B8',
+            nockColors: ['#B45309', '#78350F', '#FEF08A'],
+            servings: ['#7F1D1D', '#D97706', '#1E3A8A'],
+            palettes: [
+                { cock: '#F59E0B', hen: '#1E3A8A', bands: ['#F59E0B', '#FEF08A', '#1E3A8A'] },
+                { cock: '#0D9488', hen: '#881337', bands: ['#0D9488', '#FEF08A', '#881337'] },
+                { cock: '#78350F', hen: '#F8FAFC', bands: ['#78350F', '#FEF08A', '#F8FAFC'] }
+            ]
+        },
+        {
+            name: "Roman Legion Sagittarius",
+            woods: ['douglas', 'cedar'],
+            shapes: ['traditional', 'shield'],
+            lengths: [4.0, 4.5],
+            points: ['bodkin', 'field'],
+            nocks: ['horn', 'selfnock'],
+            pointColor: '#64748B',
+            nockColors: ['#78350F', '#B45309'],
+            servings: ['#7F1D1D', '#581C87'],
+            palettes: [
+                { cock: '#B91C1C', hen: '#EAB308', bands: ['#B91C1C', '#EAB308', '#7F1D1D'] },
+                { cock: '#6B21A8', hen: '#CA8A04', bands: ['#6B21A8', '#FEF08A', '#CA8A04'] }
+            ]
+        },
+        {
+            name: "Crimson Dragon / Flame",
+            woods: ['cedar', 'douglas'],
+            shapes: ['batman', 'banana'],
+            lengths: [4.5, 5.0],
+            points: ['broadhead3', 'broadhead2'],
+            nocks: ['plastic', 'horn'],
+            pointColor: '#334155',
+            nockColors: ['#DC2626', '#EA580C', '#090D16'],
+            servings: ['#EA580C', '#090D16', '#7F1D1D'],
+            palettes: [
+                { cock: '#DC2626', hen: '#F59E0B', bands: ['#DC2626', '#FEF08A', '#EA580C'] },
+                { cock: '#0F172A', hen: '#EF4444', bands: ['#0F172A', '#FEF08A', '#EF4444'] },
+                { cock: '#991B1B', hen: '#D97706', bands: ['#991B1B', '#F59E0B', '#D97706'] }
+            ]
+        },
+        {
+            name: "Sakura Cherry Blossom",
+            woods: ['spruce', 'bamboo'],
+            shapes: ['parabolic', 'traditional'],
+            lengths: [4.0, 4.5],
+            points: ['bullet', 'field'],
+            nocks: ['horn', 'plastic'],
+            pointColor: '#CBD5E1',
+            nockColors: ['#F8FAFC', '#FEF08A'],
+            servings: ['#F43F5E', '#F8FAFC'],
+            palettes: [
+                { cock: '#FB7185', hen: '#FFFFFF', bands: ['#FB7185', '#F8FAFC', '#FDA4AF'] },
+                { cock: '#34D399', hen: '#FDA4AF', bands: ['#34D399', '#F8FAFC', '#FDA4AF'] }
+            ]
+        },
+        {
+            name: "Cyberpunk Velocity",
+            woods: ['carbon'],
+            shapes: ['batman', 'shield'],
+            lengths: [3.5, 4.0],
+            points: ['bullet', 'field'],
+            nocks: ['plastic'],
+            pointColor: '#1E293B',
+            nockColors: ['#06B6D4', '#A855F7', '#F43F5E'],
+            servings: ['#06B6D4', '#9333EA', '#0F172A'],
+            palettes: [
+                { cock: '#EC4899', hen: '#06B6D4', bands: ['#EC4899', '#F8FAFC', '#06B6D4'] },
+                { cock: '#A3E635', hen: '#7C3AED', bands: ['#A3E635', '#CBD5E1', '#7C3AED'] },
+                { cock: '#F43F5E', hen: '#020617', bands: ['#F43F5E', '#06B6D4', '#020617'] }
+            ]
+        }
+    ];
+
+    // 1. ✨ Smart Archetype Randomizer
     function generateSmartRandom() {
+        const arch = archetypes[Math.floor(Math.random() * archetypes.length)];
+        const pal = arch.palettes[Math.floor(Math.random() * arch.palettes.length)];
+
+        state.featherShape = arch.shapes[Math.floor(Math.random() * arch.shapes.length)];
+        state.featherLength = arch.lengths[Math.floor(Math.random() * arch.lengths.length)];
+        state.woodType = arch.woods[Math.floor(Math.random() * arch.woods.length)];
+        state.pointType = arch.points[Math.floor(Math.random() * arch.points.length)];
+        state.nockType = arch.nocks[Math.floor(Math.random() * arch.nocks.length)];
+
+        state.pointColor = arch.pointColor;
+        state.nockColor = arch.nockColors[Math.floor(Math.random() * arch.nockColors.length)];
+        state.servingColor = arch.servings[Math.floor(Math.random() * arch.servings.length)];
+
+        state.showFrontServing = true;
+        state.showBackServing = Math.random() > 0.25;
+
+        // No random spiral wrapping or crown dips
+        state.enableSpiralWrap = false;
+        state.enableCrownDip = false;
+        state.crownLength = 5.5;
+
+        // Stains only occasionally on natural woods (always single solid color, no two-tone)
+        if (state.woodType !== 'carbon' && Math.random() > 0.6) {
+            state.enableShaftStain = true;
+            state.useSingleShaftColor = true;
+            state.shaftBackColor = arch.nockColors[0];
+            state.shaftFrontColor = arch.nockColors[0];
+        } else {
+            state.enableShaftStain = false;
+            state.useSingleShaftColor = true;
+        }
+
+        // Fletching colors (Cock vs Hen contrast or elegant solid match)
+        const isSolid = Math.random() < 0.25;
+        state.feather1Color = pal.cock;
+        state.feather2Color = isSolid ? pal.cock : pal.hen;
+        state.feather3Color = isSolid ? pal.cock : pal.hen;
+
+        // Dynamic, aesthetically rhythmic cresting
+        const hasCresting = Math.random() > 0.3;
+        state.showCresting = hasCresting;
+        state.crestingStartOffset = parseFloat((Math.random() * 0.35 + 0.15).toFixed(2));
+        state.crestingBands = [];
+
+        if (hasCresting) {
+            const patternType = Math.floor(Math.random() * 3);
+            if (patternType === 0) {
+                // Symmetrical Triple: Thin - Wide - Thin
+                state.crestingBands.push(
+                    { id: 'cr_0', color: pal.bands[0], width: 0.15, offset: 0.15 },
+                    { id: 'cr_1', color: pal.bands[1], width: 0.40, offset: 0.10 },
+                    { id: 'cr_2', color: pal.bands[2] || pal.bands[0], width: 0.15, offset: 0.10 }
+                );
+            } else if (patternType === 1) {
+                // Quad Accent: Bold - Accent - Bold - Accent
+                state.crestingBands.push(
+                    { id: 'cr_0', color: pal.bands[0], width: 0.30, offset: 0.15 },
+                    { id: 'cr_1', color: pal.bands[1], width: 0.10, offset: 0.08 },
+                    { id: 'cr_2', color: pal.bands[0], width: 0.30, offset: 0.08 },
+                    { id: 'cr_3', color: pal.bands[1], width: 0.10, offset: 0.08 }
+                );
+            } else {
+                // Minimalist Double Pinstripe
+                state.crestingBands.push(
+                    { id: 'cr_0', color: pal.bands[0], width: 0.25, offset: 0.20 },
+                    { id: 'cr_1', color: pal.bands[1], width: 0.25, offset: 0.12 }
+                );
+            }
+        }
+
+        updateUIFromState();
+        triggerUpdate();
+    }
+
+    // 2. 🎲 Classic Open Randomizer
+    function generateClassicRandom() {
         const woodColors = ['#D97706', '#B45309', '#92400E', '#78350F', '#451A03', '#65A30D', '#334155'];
-        const dipColors = ['#F8FAFC', '#FEF08A', '#EF4444', '#3B82F6', '#10B981', '#1E293B', '#F59E0B', '#9333EA'];
-        const nockColors = ['#B45309', '#78350F', '#1E293B', '#EF4444', '#F8FAFC', '#3B82F6'];
+        const nockColors = ['#B45309', '#78350F', '#1E293B', '#EF4444', '#F8FAFC', '#3B82F6', '#10B981', '#F59E0B'];
         const pointColors = ['#94A3B8', '#CBD5E1', '#64748B', '#F59E0B', '#334155'];
         
         const palettes = [
-            { f1: '#EF4444', f2: '#1E293B', f3: '#1E293B', c1: '#EF4444', c2: '#F8FAFC', c3: '#1E293B' },
-            { f1: '#F59E0B', f2: '#D97706', f3: '#D97706', c1: '#F59E0B', c2: '#FEF08A', c3: '#78350F' },
-            { f1: '#10B981', f2: '#065F46', f3: '#065F46', c1: '#10B981', c2: '#ECFDF5', c3: '#065F46' },
-            { f1: '#3B82F6', f2: '#1E3A8A', f3: '#1E3A8A', c1: '#3B82F6', c2: '#DBEAFE', c3: '#1E3A8A' },
-            { f1: '#F8FAFC', f2: '#DC2626', f3: '#DC2626', c1: '#DC2626', c2: '#F8FAFC', c3: '#DC2626' }
+            { f1: '#EF4444', f2: '#1E293B', f3: '#1E293B', c1: '#EF4444', c2: '#F8FAFC' },
+            { f1: '#F59E0B', f2: '#D97706', f3: '#D97706', c1: '#F59E0B', c2: '#FEF08A' },
+            { f1: '#10B981', f2: '#065F46', f3: '#065F46', c1: '#10B981', c2: '#ECFDF5' },
+            { f1: '#3B82F6', f2: '#1E3A8A', f3: '#1E3A8A', c1: '#3B82F6', c2: '#DBEAFE' },
+            { f1: '#F8FAFC', f2: '#DC2626', f3: '#DC2626', c1: '#DC2626', c2: '#F8FAFC' },
+            { f1: '#84CC16', f2: '#1E293B', f3: '#1E293B', c1: '#84CC16', c2: '#F8FAFC' },
+            { f1: '#9333EA', f2: '#3B82F6', f3: '#3B82F6', c1: '#9333EA', c2: '#FEF08A' }
         ];
 
-        const shapes = ['shield', 'banana', 'parabolic', 'batman', 'traditional'];
+        const shapes = ['shield', 'banana', 'parabolic', 'batman', 'traditional', 'legolas-style'];
         const woods = ['cedar', 'spruce', 'pine', 'bamboo', 'douglas', 'carbon'];
         const points = ['field', 'bullet', 'broadhead2', 'broadhead3', 'bodkin', 'blunt'];
         const nocks = ['plastic', 'selfnock', 'horn'];
 
         const pal = palettes[Math.floor(Math.random() * palettes.length)];
         state.featherShape = shapes[Math.floor(Math.random() * shapes.length)];
+        state.featherLength = [3.5, 4.0, 4.5, 5.0][Math.floor(Math.random() * 4)];
         state.woodType = woods[Math.floor(Math.random() * woods.length)];
         state.pointType = points[Math.floor(Math.random() * points.length)];
         state.nockType = nocks[Math.floor(Math.random() * nocks.length)];
 
-        // Randomize Shaft colors, Stain & Crown Dip
-        state.enableShaftStain = Math.random() > 0.5;
-        state.shaftBackColor = woodColors[Math.floor(Math.random() * woodColors.length)];
-        state.shaftFrontColor = woodColors[Math.floor(Math.random() * woodColors.length)];
-        state.crownDipColor = dipColors[Math.floor(Math.random() * dipColors.length)];
-        state.crownLength = parseFloat((Math.random() * 5.0 + 3.0).toFixed(2));
-        state.enableCrownDip = Math.random() > 0.4;
-        state.useSingleShaftColor = Math.random() > 0.4;
-
-        state.nockColor = nockColors[Math.floor(Math.random() * nockColors.length)];
         state.pointColor = pointColors[Math.floor(Math.random() * pointColors.length)];
+        state.nockColor = nockColors[Math.floor(Math.random() * nockColors.length)];
         state.servingColor = nockColors[Math.floor(Math.random() * nockColors.length)];
+
+        state.showFrontServing = true;
+        state.showBackServing = Math.random() > 0.3;
+        state.enableSpiralWrap = false;
+        state.enableCrownDip = false;
+        state.crownLength = 5.5;
+
+        // Single solid stain (no two-tone)
+        state.enableShaftStain = Math.random() > 0.5;
+        state.useSingleShaftColor = true;
+        state.shaftBackColor = woodColors[Math.floor(Math.random() * woodColors.length)];
+        state.shaftFrontColor = state.shaftBackColor;
 
         state.feather1Color = pal.f1;
         state.feather2Color = pal.f2;
         state.feather3Color = pal.f3;
 
-        // Randomize global offset & cresting bands count
-        state.crestingStartOffset = parseFloat((Math.random() * 0.8 + 0.1).toFixed(2));
-        const bandCount = Math.floor(Math.random() * 4) + 2; // 2 to 5 bands
+        // Cresting
+        state.showCresting = Math.random() > 0.35;
+        state.crestingStartOffset = parseFloat((Math.random() * 0.4 + 0.15).toFixed(2));
+        const bandCount = Math.floor(Math.random() * 3) + 2; // 2 to 4 bands
         state.crestingBands = [];
         for (let b = 0; b < bandCount; b++) {
             state.crestingBands.push({
                 id: 'rnd_' + b,
                 color: b % 2 === 0 ? pal.c1 : pal.c2,
-                width: parseFloat((Math.random() * 0.4 + 0.1).toFixed(2)),
-                offset: parseFloat((Math.random() * 0.2 + 0.05).toFixed(2))
+                width: parseFloat((Math.random() * 0.35 + 0.1).toFixed(2)),
+                offset: parseFloat((Math.random() * 0.15 + 0.08).toFixed(2))
             });
         }
 
@@ -2131,18 +2447,52 @@
     }
 
     function copySpecsSummary() {
+        const pointNames = {
+            field: 'Field Point',
+            bullet: 'Bullet Point',
+            broadhead2: 'Broadhead (2-Blade)',
+            broadhead3: 'Broadhead (3-Blade)',
+            bodkin: 'Bodkin Point',
+            blunt: 'Blunt Point'
+        };
+
+        const matNames = {
+            cedar: 'Port Orford Cedar',
+            spruce: 'Sitka Spruce',
+            pine: 'Traditional Pine',
+            bamboo: 'Asian Bamboo',
+            douglas: 'Douglas Fir',
+            carbon: 'Carbon Fiber'
+        };
+
+        const shapeNames = {
+            shield: 'Shield Cut',
+            banana: 'Banana Cut',
+            parabolic: 'Parabolic Cut',
+            batman: 'Batman Cut',
+            traditional: 'Triangular Cut',
+            'legolas-style': 'Old English',
+            'flu-flu': 'Flu-Flu Spiral'
+        };
+
         const text = `🏹 ARROW SPECIFICATION:
-• Fletching Shape: ${state.featherShape.toUpperCase()} (${state.featherLength}") [Spiral Binding: ${state.enableSpiralWrap ? 'YES' : 'NO'}]
-• Shaft Material: ${state.woodType.toUpperCase()} (Diameter: ${state.shaftDiameter || 8.0}mm) (Stain: ${state.enableShaftStain ? 'YES' : 'NO'})
+• Fletching Shape: ${shapeNames[state.featherShape] || state.featherShape.toUpperCase()} (${state.featherLength}") [Spiral Binding: ${state.enableSpiralWrap ? 'YES' : 'NO'}]
+• Shaft Material: ${matNames[state.woodType] || state.woodType.toUpperCase()} (Diameter: ${state.shaftDiameter || 8.0}mm) (Stain: ${state.enableShaftStain ? 'YES' : 'NO'})
 • Crown Dip Length: ${state.enableCrownDip ? state.crownLength + '"' : 'NONE'}
 • Cresting Offset: ${state.showCresting ? state.crestingStartOffset + '"' : 'NONE'}
-• Point Type: ${state.pointType.toUpperCase()} (${state.pointWeight} gr)
+• Point: ${pointNames[state.pointType] || state.pointType.toUpperCase()}
 • Nock Type: ${state.nockType.toUpperCase()}
 • Arrow Length: ${state.arrowLength}"`;
 
-        navigator.clipboard.writeText(text).then(() => {
-            alert('Arrow specification copied to clipboard!');
-        });
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('📋 Arrow specification copied!');
+            }).catch(() => {
+                promptCopyFallback(text);
+            });
+        } else {
+            promptCopyFallback(text);
+        }
     }
 
     // Run Initialization on Load
